@@ -18,7 +18,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         CancelButtonType (1,1) structeditor.enum.ButtonType = 'DefaultButton';
         OkButtonIcon string
         OkButtonText (1,1) string = "OK";
-        OkButtonType (1,1) structeditor.enum.ButtonType = "PrimaryButton";
+        OkButtonType (1,1) structeditor.enum.ButtonType = "DefaultButton";
         Theme (1,1) structeditor.enum.Theme = "Light";
         FinishButtonPushedFcn
     end
