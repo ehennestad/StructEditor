@@ -48,9 +48,11 @@ classdef StructEditorApp < handle & ...
 
     properties
         Title (1,1) string = "Edit Struct"
+        Description (1,1) string = "Please fill out the following fields"
         HeaderHeight = 50
         FooterHeight = 50
         SidebarWidth = 150
+        LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
     end
 
     properties (Hidden)
@@ -75,9 +77,9 @@ classdef StructEditorApp < handle & ...
             arguments
                 data struct
                 propValues.Title = "Edit Struct"
-                propValues.Theme = []
+                propValues.Theme = structeditor.enum.Theme.Light
             end
-
+            
             % Todo: Before or after setting data and creating controls?
             propNvPairs = namedargs2cell(propValues);
             obj.set(propNvPairs{:});
@@ -133,6 +135,16 @@ classdef StructEditorApp < handle & ...
             obj.Title = value;
             obj.postSetTitle()
         end
+        
+        function set.Description(obj, value)
+            obj.Description = value;
+            obj.postSetDescription()
+        end
+
+        function set.LabelPosition(obj, value)
+            obj.LabelPosition = value;
+            obj.postSetLabelPosition()
+        end
 
         function set.CancelButtonText(obj, value)
             obj.CancelButtonText = value;
@@ -150,6 +162,18 @@ classdef StructEditorApp < handle & ...
         function postSetTitle(obj)
             if ~isempty(obj.UIFigure)
                 obj.UIFigure.Name = obj.Title;
+            end
+        end
+
+        function postSetDescription(obj)
+            if ~isempty(obj.Header)
+                obj.Header.Text = obj.Description;
+            end
+        end
+
+        function postSetLabelPosition(obj)
+            for i = 1:numel(obj.UIControlContainers)
+                obj.UIControlContainers(i).LabelPosition = obj.LabelPosition;
             end
         end
 
@@ -233,6 +257,13 @@ classdef StructEditorApp < handle & ...
             obj.SidebarMenu.SelectionChangedFcn = @obj.onDataGroupChanged;
         end
 
+        function createHeader(obj)
+            obj.Header = uilabel(obj.MainGridLayout);
+            obj.Header.Layout.Row = 1;
+            obj.Header.Layout.Column = unique([1, 1+obj.ShowSidebar*2]);
+            obj.Header.Text = obj.Description;
+        end
+
         function createFooter(obj)
             obj.Footer = structeditor.FinishButtons(obj.MainGridLayout);
             obj.Footer.Layout.Row = 1 + obj.ShowHeader*2 + obj.ShowFooter*2;
@@ -302,6 +333,10 @@ classdef StructEditorApp < handle & ...
 
             if obj.ShowSidebar
                 obj.createSidebarMenu(obj.DataTree)
+            end
+            
+            if obj.ShowHeader
+                obj.createHeader()
             end
 
             obj.createFooter()

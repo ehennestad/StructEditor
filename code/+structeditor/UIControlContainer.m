@@ -10,6 +10,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
     properties
         ValueChangedFcn
+            
+        LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
     end
 
     properties (Access = private)
@@ -18,16 +20,13 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         DataOriginal (1,1) struct
     end
 
-    properties (Constant, Hidden = true) % Move to appwindow superclass
-        DEFAULT_THEME = nansen.theme.getThemeColors('dark-purple');
-    end
-
     properties (Dependent)
         IsClean
     end
 
     properties %(Access = private)
         UIControls
+        UILabels matlab.ui.control.Label
         Parent
         UIGridLayout
     end
@@ -101,6 +100,21 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         function value = get.IsClean(obj)
             value = isequal(obj.DataModified, obj.DataOriginal);
         end
+
+        function set.LabelPosition(obj, value)
+            obj.LabelPosition = value;
+            obj.postSetLabelPosition()
+        end
+
+        function set.RowSpacing(obj, value)
+            obj.RowSpacing = value;
+            obj.postSetRowSpacing()
+        end
+       
+        function set.ColumnSpacing(obj, value)
+            obj.ColumnSpacing = value;
+            obj.postSetColumnSpacing()
+        end
     end
 
     % Property post set methods
@@ -127,6 +141,25 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 end
             end
         end
+
+        function postSetLabelPosition(obj)
+            if ~isempty(obj.UIGridLayout)
+                obj.updateGridLayoutSize()
+                obj.updateUIControlPositions()
+            end
+        end
+
+        function postSetRowSpacing(obj)
+            if ~isempty(obj.UIGridLayout)
+                obj.updateGridLayoutSize()
+            end
+        end
+
+        function postSetColumnSpacing(obj)
+            if ~isempty(obj.UIGridLayout)
+                obj.updateGridLayoutSize()
+            end
+        end
     end
 
     % Component creation
@@ -135,18 +168,69 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             obj.UIGridLayout = uigridlayout(obj.Parent);
             obj.UIGridLayout.Visible = 'off';
             
-            obj.UIGridLayout.ColumnWidth = {'1x', 200, 30};
-
-            numRows = numel( fieldnames(obj.DataModified) );
-            obj.UIGridLayout.RowHeight = repmat({obj.RowHeight}, 1, numRows);
+            obj.updateGridLayoutSize()
 
             obj.UIGridLayout.ColumnSpacing = obj.ColumnSpacing;
-            obj.UIGridLayout.RowSpacing = obj.RowSpacing;
+            %obj.UIGridLayout.RowSpacing = obj.RowSpacing;
         
             obj.UIGridLayout.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
             obj.UIGridLayout.Scrollable = true;
         end
+
+        function updateGridLayoutSize(obj)
+            numRows = numel( fieldnames(obj.DataModified) );
+
+            switch obj.LabelPosition
+                case 'left'
+                    obj.UIGridLayout.ColumnWidth = {'1x', 200, 30};
+                    obj.UIGridLayout.RowHeight = repmat({obj.RowHeight}, 1, numRows);
+                    obj.UIGridLayout.RowSpacing = obj.RowSpacing;
+
+                case 'above'
+                    obj.UIGridLayout.ColumnWidth = {'1x', 30};
+                    obj.UIGridLayout.RowHeight = repmat({20, obj.RowHeight, obj.RowSpacing}, 1, numRows);                    
+                    obj.UIGridLayout.RowSpacing = 0;
+            end
+        end
+
+        function updateUIControlPositions(obj)
+            dataFieldNames = fieldnames(obj.DataModified);
+            numRows = numel( dataFieldNames );
     
+            for i = 1:numRows
+                hControl = obj.UIControls.(dataFieldNames{i});
+                obj.placeUIControl(hControl, i);
+                obj.placeUILabel(obj.UILabels(i), i);
+            end
+        end
+
+        function placeUILabel(obj, hLabel, rowNumber)
+            switch obj.LabelPosition
+                case 'left'
+                    hLabel.Layout.Row = rowNumber;
+                    hLabel.Layout.Column = 1;
+                    hLabel.HorizontalAlignment = 'right';
+                    hLabel.VerticalAlignment = 'center';
+
+                case 'above'
+                    hLabel.Layout.Row = rowNumber*3-2;
+                    hLabel.Layout.Column = 1;
+                    hLabel.HorizontalAlignment = 'left';
+                    hLabel.VerticalAlignment = 'top';
+            end
+        end
+
+        function placeUIControl(obj, hControl, rowNumber)
+            switch obj.LabelPosition
+                case 'left'
+                    hControl.Layout.Column = 2; 
+                    hControl.Layout.Row = rowNumber;
+                case 'above'
+                    hControl.Layout.Column = 1; 
+                    hControl.Layout.Row = rowNumber*3-1;
+            end
+        end
+
         function createUIControls(obj) % Todo: Should be method of abstract superclass
             fieldNames = string( fieldnames(obj.DataModified) );
 
@@ -162,15 +246,15 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
         function createLabel(obj, iRow, name)
             hLabel = uilabel( obj.UIGridLayout );
-            hLabel.Text = [utility.string.varname2label(char(name)), ':'];
+            hLabel.Text = [structeditor.utility.varname2label(char(name)), ':'];
             %hLabel.FontWeight = 'bold';
             hLabel.FontColor = obj.Theme.ColorModel.TextColor;
             hLabel.FontName = obj.FontName;
             hLabel.FontSize = obj.FontSize;
-            hLabel.Layout.Row = iRow;
-            hLabel.Layout.Column = 1;
-            hLabel.HorizontalAlignment = 'right';
             hLabel.Tag = name;
+
+            obj.placeUILabel(hLabel, iRow)
+            obj.UILabels(iRow) = hLabel;
         end
 
         function hControl = createControl(obj, iRow, name, value, config)
@@ -219,8 +303,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 end
             end
 
-            hControl.Layout.Column = 2; 
-            hControl.Layout.Row = iRow;
+            obj.placeUIControl(hControl, iRow)
+
             hControl.Tag = name;
              
             if isprop(hControl, 'BackgroundColor')
