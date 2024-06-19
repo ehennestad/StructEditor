@@ -1,0 +1,12 @@
+{
+    "BackgroundColor": [0.04,0.04,0.04],
+    "BorderColor": [0.35,0.35,0.35],
+    "BackgroundColorEdit": [0.04,0.04,0.04],
+    "TextColor": [0.94, 0.94, 0.94],
+    "PrimaryColorA": [0.15,0.16,0.18],
+    "PrimaryColorB": [0.2, 0.7333333333333333, 1.0],
+    "PrimaryColorC": [0.8196, 0.8235, 0.8275],
+    "SecondaryColorA": [0.47843137254901963, 0.7450980392156863, 1.0],
+    "SecondaryColorB": [0.30196078431372547, 0.6039215686274509, 1.0],
+    "SecondaryColorC": [0.0, 0.2, 0.4]
+}

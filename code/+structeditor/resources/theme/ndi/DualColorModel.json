@@ -1,0 +1,20 @@
+{
+    "BorderColor": "#002054",
+    "BackgroundColorEdit": "white",
+    "TextColor": [
+        0.0,
+        0.12549019607843138,
+        0.32941176470588237
+    ],
+    "BackgroundColor": [
+        0.9647058823529412,
+        0.9725490196078432,
+        0.9882352941176472
+    ],
+    "PrimaryColorA": "#002054",
+    "PrimaryColorB": "#17A7FF",
+    "PrimaryColorC": "#2EB0FF",
+    "SecondaryColorA": "#FAFAFA",
+    "SecondaryColorB": "#EAEDF3",
+    "SecondaryColorC": "#C5D1E0"
+}
