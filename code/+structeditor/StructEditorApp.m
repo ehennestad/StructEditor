@@ -44,6 +44,7 @@ classdef StructEditorApp < handle & ...
 
     properties (SetAccess = private)
         FinishState (1,1) string {mustBeMember(FinishState, ["", "Finished", "Canceled"])} = ""
+        CloseOnExit (1,1) logical = true
     end
 
     properties
@@ -110,9 +111,25 @@ classdef StructEditorApp < handle & ...
     end
 
     methods
-        function uiwait(obj)
+        function uiwait(obj, preventClose)
+            if nargin == 2
+                obj.CloseOnExit = ~preventClose;
+            end
             obj.IsStandalone = false;
+            obj.FinishState = "";
             uiwait(obj.UIFigure)
+        end
+   
+        function show(obj)
+            obj.UIFigure.Visible = 'on';
+        end
+
+        function hide(obj)
+            obj.UIFigure.Visible = 'off';
+        end
+
+        function tf = hasFigure(obj)
+            tf = isvalid(obj.UIFigure);
         end
     end
     
@@ -159,6 +176,20 @@ classdef StructEditorApp < handle & ...
     end
 
     methods (Access = private) % Property post set methods
+        function onUIFigureCloseRequest(obj, src, event)
+            if obj.CloseOnExit
+                uiresume(obj.UIFigure)
+                drawnow
+                pause(0.05)
+                
+                delete(obj.UIControlContainers)
+                delete(obj.Footer)
+                delete(obj.UIFigure)
+            else
+                uiresume(obj.UIFigure)
+            end
+        end
+
         function postSetTitle(obj)
             if ~isempty(obj.UIFigure)
                 obj.UIFigure.Name = obj.Title;
@@ -198,10 +229,7 @@ classdef StructEditorApp < handle & ...
             if obj.FinishState == "Finished" % Update date
                 obj.Data = obj.UIControlContainers.Data;
             end
-
-            uiresume(obj.UIFigure)
-            drawnow
-            pause(0.05)
+            
             obj.close()
         end
     end
@@ -294,7 +322,8 @@ classdef StructEditorApp < handle & ...
             if ~isempty(obj.Theme)
                 obj.Theme.styleComponent(obj.UIFigure)
             end
-            
+            obj.UIFigure.CloseRequestFcn = @obj.onUIFigureCloseRequest;
+
             % Create grid layout
             obj.MainGridLayout = uigridlayout(obj.UIFigure);
             obj.MainGridLayout.Padding = [25, 10, 25, 10];
@@ -343,9 +372,7 @@ classdef StructEditorApp < handle & ...
         end
 
         function close(obj)
-            delete(obj.UIControlContainers)
-            delete(obj.Footer)
-            delete(obj.UIFigure)
+            obj.onUIFigureCloseRequest()
         end
     end
 end

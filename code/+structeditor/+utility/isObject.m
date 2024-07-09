@@ -7,6 +7,8 @@ function tf = isObject(value)
             tf = true;
         elseif isenum(value)
             tf = false;
+        elseif isdatetime(value)
+            tf = false;
         else
             if ~isempty(properties(value))
                 tf = true;

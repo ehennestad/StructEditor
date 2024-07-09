@@ -81,6 +81,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         end
     end
 
+    methods 
+        function reset(obj)
+            
+        end
+    end
+
     % Property set / get methods
     methods
         function set.Data(obj, value)
@@ -118,7 +124,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
     end
 
     % Property post set methods
-    methods
+    methods (Access = private)
         function postSetData(obj, oldData, newData)
             % Pre - construction
             if ~obj.IsConstructed
@@ -127,6 +133,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
             % Find which field changed.
             fieldNames = fieldnames(oldData);
+            [fieldNames, ~] = structeditor.utility.popConfigFields(fieldNames);
+            fieldNames = cellstr(fieldNames);
 
             oldValues = struct2cell(oldData);
             newValues = struct2cell(newData);
@@ -182,12 +190,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
             switch obj.LabelPosition
                 case 'left'
-                    obj.UIGridLayout.ColumnWidth = {'1x', 200, 30};
+                    obj.UIGridLayout.ColumnWidth = {'1x', 200, 25};
                     obj.UIGridLayout.RowHeight = repmat({obj.RowHeight}, 1, numRows);
                     obj.UIGridLayout.RowSpacing = obj.RowSpacing;
 
                 case 'above'
-                    obj.UIGridLayout.ColumnWidth = {'1x', 30};
+                    obj.UIGridLayout.ColumnWidth = {'1x', 25};
                     obj.UIGridLayout.RowHeight = repmat({20, obj.RowHeight, obj.RowSpacing}, 1, numRows);                    
                     obj.UIGridLayout.RowSpacing = 0;
             end
@@ -229,18 +237,33 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     hControl.Layout.Column = 1; 
                     hControl.Layout.Row = rowNumber*3-1;
             end
+
+            if isprop(hControl, 'HasButton')
+                hControl.Layout.Column = hControl.Layout.Column + [0,1]; 
+            end
         end
 
         function createUIControls(obj) % Todo: Should be method of abstract superclass
             fieldNames = string( fieldnames(obj.DataModified) );
 
+            [fieldNames, ~] = structeditor.utility.popConfigFields(fieldNames);
+
             for i = 1:numel(fieldNames)
                 name = fieldNames(i);
                 value = obj.DataModified.(name);
+                config = obj.getConfigField(obj.DataModified, name);
 
                 obj.createLabel(i, name)
-                hControl = obj.createControl(i, name, value);
+                hControl = obj.createControl(i, name, value, config);
                 obj.UIControls.(name) = hControl;
+            end
+        end
+
+        function config = getConfigField(obj, data, name)
+            if isfield(data, name+"_")
+                config = data.(name+"_");
+            else
+                config = [];
             end
         end
 
@@ -259,7 +282,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
         function hControl = createControl(obj, iRow, name, value, config)
 
-            if nargout < 4; config = []; end
+            if nargin < 4; config = []; end
             
             parentContainer = obj.UIGridLayout;
 
@@ -300,6 +323,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     case 'logical'
                         hControl = uicheckbox(parentContainer);
                         hControl.Text = '';
+
+                    case 'datetime'
+                        hControl = uidatepicker(parentContainer);
+                        if isempty(value)
+                            value = NaT;
+                        end
                 end
             end
 
@@ -310,9 +339,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             if isprop(hControl, 'BackgroundColor')
                 hControl.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
             end
-            hControl.FontColor = obj.Theme.ColorModel.TextColor;
-            hControl.FontName = obj.FontName;
-            hControl.FontSize = obj.FontSize;
+            if isprop(hControl, 'FontColor')
+                hControl.FontColor = obj.Theme.ColorModel.TextColor;
+                hControl.FontName = obj.FontName;
+                hControl.FontSize = obj.FontSize;
+            end
 
             if isprop(hControl, 'Value')
                 hControl.Value = value;
