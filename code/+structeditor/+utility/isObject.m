@@ -9,6 +9,8 @@ function tf = isObject(value)
             tf = false;
         elseif isdatetime(value)
             tf = false;
+        elseif isstring(value)
+            tf = false;
         else
             if ~isempty(properties(value))
                 tf = true;
