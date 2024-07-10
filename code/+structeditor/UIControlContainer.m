@@ -6,11 +6,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
     properties (Dependent)
         Data (1,1) struct
+        Visible (1,1) matlab.lang.OnOffSwitchState
     end
 
     properties
         ValueChangedFcn
-            
         LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
     end
 
@@ -33,6 +33,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
     properties (Access = private)
         IsConstructed = false;
+        Visible_ (1,1) matlab.lang.OnOffSwitchState = 'on'
     end
 
     properties (SetAccess = immutable, GetAccess = private) %?
@@ -60,9 +61,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             %     superArgs = {};
             % end
             % obj = obj@structeditor.mixin.HasTheme(superArgs{:})
-
-            propNvPairs = namedargs2cell(propValues);
-            obj.set(propNvPairs{:});
+            
+            obj.set(propValues);
 
             obj.Parent = hParent;
             [obj.DataModified, obj.DataOriginal] = deal(data);
@@ -77,7 +77,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
             % Todo:
             obj.IsConstructed = true;
-            obj.UIGridLayout.Visible = 'on';
+            obj.UIGridLayout.Visible = obj.Visible_;
         end
     end
 
@@ -101,6 +101,20 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         end
         function value = get.Data(obj)
             value = obj.DataModified();
+        end
+        
+        function set.Visible(obj, value)
+            obj.Visible_ = value;
+            if ~isempty(obj.UIGridLayout)
+                obj.UIGridLayout.Visible = value;
+            end
+        end
+        function value = get.Visible(obj)
+            if ~isempty(obj.UIGridLayout)
+                value = obj.UIGridLayout.Visible;
+            else
+                value = obj.Visible_;
+            end
         end
 
         function value = get.IsClean(obj)
