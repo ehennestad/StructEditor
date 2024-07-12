@@ -18,7 +18,13 @@ classdef TypedStruct < handle & matlab.mixin.SetGet
 
     methods 
         function tf = isSameType(obj, testStruct)
-            tf = isempty( intersect(fieldnames(obj.Data), fieldnames(testStruct)) );
+            tf = false;
+            fieldsA = fieldnames(obj.Data);
+            fieldsB = fieldnames(testStruct);
+
+            if numel(fieldsA) == numel(fieldsB)
+                tf = isempty( setdiff(fieldsA, fieldsB) );
+            end
         end
     end
 end

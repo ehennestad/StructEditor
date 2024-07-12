@@ -41,6 +41,14 @@ classdef TypedStructArray < handle
             isMatch = strcmp(obj.TypeNames, typeName);
             s = obj.StructTypes(isMatch).Data;
         end
+
+        function structType = getStructType(obj, s)
+            for i = 1:numel(obj.StructTypes)
+                if obj.StructTypes(i).isSameType(s)
+                    structType = obj.StructTypes(i).Type;
+                end
+            end
+        end
     end
 
     methods
