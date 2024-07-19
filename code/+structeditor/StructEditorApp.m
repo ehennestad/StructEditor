@@ -54,6 +54,8 @@ classdef StructEditorApp < handle & ...
         FooterHeight = 50
         SidebarWidth = 150
         LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
+        LoadingHtmlSource
+        EnableNestedStruct matlab.lang.OnOffSwitchState = 'off' 
     end
 
     properties (Hidden)
@@ -76,9 +78,11 @@ classdef StructEditorApp < handle & ...
     methods
         function obj = StructEditorApp(data, propValues)
             arguments
-                data struct
+                data % struct
                 propValues.Title = "Edit Struct"
                 propValues.Theme = structeditor.enum.Theme.Light
+                propValues.LoadingHtmlSource = ''
+                propValues.EnableNestedStruct = 'off'
             end
             
             % Todo: Before or after setting data and creating controls?
@@ -88,10 +92,12 @@ classdef StructEditorApp < handle & ...
             obj.Data = data;
 
             % Step 1: Parse input data % Todo: postSetData function?
-            obj.DataTree = structeditor.utility.getTreeStruct(data);
-            if ~isempty(obj.DataTree.children)
-                obj.ShowSidebar = true;
-                % %Todo: flatten struct.
+            if obj.EnableNestedStruct
+                obj.DataTree = structeditor.utility.getTreeStruct(data);
+                if ~isempty(obj.DataTree.children)
+                    obj.ShowSidebar = true;
+                    % %Todo: flatten struct.
+                end
             end
 
             % Step 2: Create UI components
@@ -99,7 +105,8 @@ classdef StructEditorApp < handle & ...
 
             % obj.createControls() Todo...
             % Create the UIControlContainer
-            H = structeditor.UIControlContainer(obj.ControlPanel, obj.Data, 'Theme', obj.Theme);
+            H = structeditor.UIControlContainer(obj.ControlPanel, obj.Data, ...
+                'Theme', obj.Theme, 'LoadingHtmlSource', obj.LoadingHtmlSource);
             obj.UIControlContainers = H;
 
             % Apply theme...

@@ -12,6 +12,13 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
     properties
         ValueChangedFcn
         LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
+        LoadingHtmlSource
+    end
+
+    properties
+        ValuePreSetFcn % E.g validation
+        ValuePostSetFcn % E.g conversion to correct type
+        CustomConstructorFcn
     end
 
     properties (Access = private)
@@ -53,6 +60,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 propValues.RowSpacing
                 propValues.ColumnSpacing
                 propValues.Theme
+                propValues.LoadingHtmlSource
             end
             % if isfield(propValues, 'Theme')
             %     superArgs = {'Theme', propValues.Theme};
@@ -67,6 +75,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             obj.Parent = hParent;
             [obj.DataModified, obj.DataOriginal] = deal(data);
             
+            if ~isempty(obj.LoadingHtmlSource)
+                g = uigridlayout(hParent, 'ColumnWidth', {'1x'},'RowHeight', {'1x'}, 'Padding', 75 );
+                h = uihtml(g, "HTMLSource", obj.LoadingHtmlSource);
+            end
+
             % Todo: Assign property values
 
             % Todo: Create grid layout
@@ -78,6 +91,9 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             % Todo:
             obj.IsConstructed = true;
             obj.UIGridLayout.Visible = obj.Visible_;
+            if ~isempty(obj.LoadingHtmlSource)
+                delete(h); delete(g)
+            end
         end
     end
 
@@ -100,7 +116,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             obj.postSetData(oldData, newData)
         end
         function value = get.Data(obj)
-            value = obj.DataModified();
+            value = obj.DataModified;
         end
         
         function set.Visible(obj, value)
@@ -154,11 +170,13 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             newValues = struct2cell(newData);
 
             for i = 1:numel(fieldNames)
-                hControl = obj.UIControls.(fieldNames{i});
-                if ~isequal(oldValues{i}, newValues{i})
-                    if isprop(hControl, 'Value')
-                        hControl.Value = newValues{i};
-                        % Todo: Callback
+                if isfield(obj.UIControls, fieldNames{i})
+                    hControl = obj.UIControls.(fieldNames{i});
+                    if ~isequal(oldValues{i}, newValues{i})
+                        if isprop(hControl, 'Value')
+                            hControl.Value = newValues{i};
+                            % Todo: Callback
+                        end
                     end
                 end
             end
@@ -266,6 +284,10 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 name = fieldNames(i);
                 value = obj.DataModified.(name);
                 config = obj.getConfigField(obj.DataModified, name);
+
+                if isequal(config, 'hidden')
+                    continue
+                end
 
                 obj.createLabel(i, name)
                 hControl = obj.createControl(i, name, value, config);
