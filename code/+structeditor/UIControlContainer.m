@@ -222,12 +222,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
             switch obj.LabelPosition
                 case 'left'
-                    obj.UIGridLayout.ColumnWidth = {'1x', 200, 25};
+                    obj.UIGridLayout.ColumnWidth = {200, '1x', 25, 1};
                     obj.UIGridLayout.RowHeight = repmat({obj.RowHeight}, 1, numRows);
                     obj.UIGridLayout.RowSpacing = obj.RowSpacing;
 
                 case 'above'
-                    obj.UIGridLayout.ColumnWidth = {'1x', 25};
+                    obj.UIGridLayout.ColumnWidth = {'1x', 25, 1};
                     obj.UIGridLayout.RowHeight = repmat({20, obj.RowHeight, obj.RowSpacing}, 1, numRows);                    
                     obj.UIGridLayout.RowSpacing = 0;
             end
@@ -373,7 +373,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             hControl.Tag = name;
              
             if isprop(hControl, 'BackgroundColor')
-                hControl.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
+                %hControl.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
             end
             if isprop(hControl, 'FontColor')
                 hControl.FontColor = obj.Theme.ColorModel.TextColor;

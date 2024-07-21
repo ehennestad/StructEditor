@@ -2,7 +2,6 @@ function S = resetStructData(S)
 
     fieldNames = string( fieldnames(S) )';
 
-
     for iFieldName = fieldNames
         
         iValue = S.(iFieldName);
@@ -20,6 +19,9 @@ function S = resetStructData(S)
         elseif iscategorical(iValue)
             C = categories(iValue);
             S.(iFieldName) = categorical(C(1),C');
+
+        elseif isa(iValue, 'function_handle')
+            continue
 
         else
             warning('No routines for reseting value of type %s', class(iValue))
