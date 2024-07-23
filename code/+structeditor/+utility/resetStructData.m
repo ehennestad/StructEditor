@@ -15,17 +15,22 @@ function S = resetStructData(S)
         elseif ischar(iValue)
             S.(iFieldName) = '';
 
-        
         elseif iscategorical(iValue)
             C = categories(iValue);
             S.(iFieldName) = categorical(C(1),C');
+
+        elseif isdatetime(iValue)
+            S.(iFieldName) = datetime.empty(1,0);
 
         elseif isa(iValue, 'function_handle')
             continue
 
         else
-            warning('No routines for reseting value of type %s', class(iValue))
-
+            try
+                S.(iFieldName) = feval(sprintf("%s.empty", class(iValue)) );
+            catch
+                warning('No routines for reseting value of type %s', class(iValue))
+            end
         end
     end
 end
