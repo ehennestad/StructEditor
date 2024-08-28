@@ -3,9 +3,10 @@ function exportToThemeFolder(themeName, themeObject, themeObjectName)
     % Assemble savepath.
     themeFolder = structeditor.utility.getThemeFolder(themeName);
     
-    S = warning('off', 'MATLAB:structOnObject');
-    s = struct(themeObject);
-    warning(S)
+    warningState = warning('off', 'MATLAB:structOnObject');
+    S = struct(themeObject);
+    warning(warningState)
     
-    writestruct(s, fullfile(themeFolder, [themeObjectName, '.json']), 'PrettyPrint', true )
+    themeFilePath = fullfile(themeFolder, [themeObjectName, '.json']);
+    structeditor.utility.writestruct(S, themeFilePath)
 end

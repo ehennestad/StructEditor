@@ -25,16 +25,18 @@ classdef Theme < handle & structeditor.theme.Theme
 
         function saveColorModel(obj)
             themeFolder = structeditor.utility.getThemeFolder(obj.Name);
-            writestruct(obj.ColorModel, fullfile(themeFolder, 'DualColorModel.json') );
+            colorModelFilePath = fullfile(themeFolder, 'DualColorModel.json');
+            structeditor.utility.writestruct(obj.ColorModel, colorModelFilePath);
         end
     end
 
     methods (Static)
         function colorModel = loadTheme(name)
             themeFolder = structeditor.utility.getThemeFolder(name);
+            colorModelFilePath = fullfile(themeFolder, 'DualColorModel.json');
 
-            if isfile(fullfile(themeFolder, 'DualColorModel.json'))
-                S = readstruct( fullfile(themeFolder, 'DualColorModel.json') );
+            if isfile(colorModelFilePath)
+                S = jsondecode( fileread(colorModelFilePath) );
                 colorModel = S;
             end
         end
