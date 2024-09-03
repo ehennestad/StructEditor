@@ -6,7 +6,7 @@ classdef Theme < handle
     %   - Incorporate methods for setting border color/radius...
     
     % Todo: Update themes if more specific overrides exist...
-
+    
     properties (Dependent)
         FigureStyle
         PanelStyle
@@ -103,7 +103,9 @@ classdef Theme < handle
                     set(componentHandles, iPropName, style.(iPropName));
                 end
             else
-                fprintf('No style available for "%s"\n', className)
+                if getpref('StructEditor', 'dev', false)
+                    fprintf('No style available for "%s"\n', className)
+                end
             end
         end
     end
