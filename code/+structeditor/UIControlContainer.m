@@ -333,8 +333,10 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 if ischar( config )
                     hControl = feval(config, parentContainer);
                 elseif isa( config, 'function_handle' )
+                    % Create component from custom function handle
                     hControl = config(parentContainer);
-                    hControl.BackgroundColor = 'w'; %todo?
+                    % Question: Set background color based on parent?
+                    % hControl.BackgroundColor = 'w'; %todo?
                 end
                
             % Create standard control / widget

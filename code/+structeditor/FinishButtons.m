@@ -25,7 +25,6 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
     
     methods
         function set.Theme(comp, value)
-            disp(value)
             comp.Theme = value;
             comp.postSetTheme()
         end
