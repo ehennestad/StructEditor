@@ -214,6 +214,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             %obj.UIGridLayout.RowSpacing = obj.RowSpacing;
         
             obj.UIGridLayout.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
+            %obj.UIGridLayout.BackgroundColor = "white";
             obj.UIGridLayout.Scrollable = true;
         end
 
@@ -268,6 +269,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 case 'above'
                     hControl.Layout.Column = 1; 
                     hControl.Layout.Row = rowNumber*3-1;
+            end
+            
+            % Todo: Make this configurable through preferences
+            if isa(hControl, 'matlab.ui.control.TextArea')
+                obj.UIGridLayout.RowHeight{ hControl.Layout.Row } = 64;
             end
 
             if isprop(hControl, 'HasButton')
