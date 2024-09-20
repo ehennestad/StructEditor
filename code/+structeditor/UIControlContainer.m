@@ -375,6 +375,9 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                         end
                 end
             end
+            if isnumeric(value) && isempty(value)
+                value = []; % 0x1 and 1x0 not supported in numeric controls.
+            end
 
             obj.placeUIControl(hControl, iRow)
 
