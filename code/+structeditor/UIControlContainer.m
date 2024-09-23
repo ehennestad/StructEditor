@@ -82,13 +82,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
             % Todo: Assign property values
 
-            % Todo: Create grid layout
+            % Create grid layout
             obj.createGridLayout()
 
-            % Todo:
-            obj.createUIControls
+            obj.createUIControls()
 
-            % Todo:
             obj.IsConstructed = true;
             obj.UIGridLayout.Visible = obj.Visible_;
             if ~isempty(obj.LoadingHtmlSource)
@@ -99,7 +97,19 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
     methods 
         function reset(obj)
-            
+            hControls = struct2cell(obj.UIControls);
+            hControls = [hControls{:}];
+            for i = 1:numel(hControls)
+                if isa(hControls(i), 'matlab.ui.control.Label') || ...
+                        isa(hControls(i), 'matlab.ui.control.Button') || ...
+                            isa(hControls(i), 'matlab.ui.control.StateButton')
+                    continue
+                elseif isa(hControls(i), 'matlab.ui.control.DropDown')
+                    hControls(i).Value = hControls(i).Items{1};
+                else
+                    hControls(i).Value(:) = [];
+                end
+            end
         end
     end
 
@@ -174,7 +184,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     hControl = obj.UIControls.(fieldNames{i});
                     if ~isequal(oldValues{i}, newValues{i})
                         if isprop(hControl, 'Value')
-                            hControl.Value = newValues{i};
+                            fieldValue = obj.formatValueForControl(newValues{i});
+                            hControl.Value = fieldValue;
                             % Todo: Callback
                         end
                     end
@@ -349,20 +360,17 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                         hControl = uieditfield(parentContainer);
     
                     case {'single', 'double'}
-                        hControl = uieditfield(parentContainer, 'numeric');
+                        hControl = uieditfield(parentContainer, 'numeric', 'AllowEmpty', 'on');
     
                     case {'uint8'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,255]);
-                        value = double(value);
+                        hControl = uispinner(parentContainer, 'Limits', [0,255], 'AllowEmpty', 'on');
     
                     case {'uint16'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,2^16-1]);
-                        value = double(value);
+                        hControl = uispinner(parentContainer, 'Limits', [0,2^16-1], 'AllowEmpty', 'on');
     
                     case 'categorical'
                         hControl = uidropdown(parentContainer);
                         hControl.Items = categories(value);
-                        value = char(value);
     
                     case 'logical'
                         hControl = uicheckbox(parentContainer);
@@ -370,15 +378,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
                     case 'datetime'
                         hControl = uidatepicker(parentContainer);
-                        if isempty(value)
-                            value = NaT;
-                        end
                 end
             end
-            if isnumeric(value) && isempty(value)
-                value = []; % 0x1 and 1x0 not supported in numeric controls.
-            end
-
             obj.placeUIControl(hControl, iRow)
 
             hControl.Tag = name;
@@ -393,7 +394,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             end
 
             if isprop(hControl, 'Value')
-                hControl.Value = value;
+                fieldValue = obj.formatValueForControl(value);
+                hControl.Value = fieldValue;
                 hControl.ValueChangedFcn = @obj.onFieldValueChanged;
             end
 
@@ -402,6 +404,27 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 %ccTools.compCustomization(hControl, 'borderRadius', "5px")
             end
         end
+    
+        function value = formatValueForControl(obj, value) %#ok<INUSD>
+            if isnumeric(value) && isempty(value)
+                value = []; % 0x1 and 1x0 not supported in numeric controls.
+                return
+            end
+
+            switch class(value)
+                case {'uint8', 'uint16'}
+                    value = double(value);
+
+                case 'categorical'
+                    value = char(value);
+                                    
+                case 'datetime'
+                    if isempty(value)
+                        value = NaT;
+                    end
+            end
+        end
+    
     end
 
     methods
