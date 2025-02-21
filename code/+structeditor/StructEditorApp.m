@@ -138,6 +138,13 @@ classdef StructEditorApp < handle & ...
         function tf = hasFigure(obj)
             tf = isvalid(obj.UIFigure);
         end
+    
+        function reset(obj)
+            for i = 1:numel(obj.UIControlContainers)
+                obj.UIControlContainers.reset()
+            end
+            obj.FinishState = "";
+        end
     end
     
     methods % Property set / get methods
@@ -233,7 +240,8 @@ classdef StructEditorApp < handle & ...
             
             obj.FinishState = evt.FinishState;
 
-            if obj.FinishState == "Finished" % Update date
+            if obj.FinishState == "Finished" % Update
+                drawnow; pause(0.05)
                 obj.Data = obj.UIControlContainers.Data;
             end
             
@@ -259,7 +267,7 @@ classdef StructEditorApp < handle & ...
             if obj.ShowSidebar
                 columnWidth = [{obj.SidebarWidth, 1}, columnWidth];
             end
-
+            
             obj.MainGridLayout.ColumnWidth = columnWidth;
             obj.MainGridLayout.RowHeight = rowHeight;
 

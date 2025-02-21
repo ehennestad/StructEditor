@@ -103,7 +103,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         function CancelButtonPushed(comp, src, event)
             finishState = 'Canceled';
             eventData = structeditor.eventdata.FinishStateSet(finishState);
-            %notify(comp, 'FinishButtonPushed', eventData);
+
             if ~isempty(comp.FinishButtonPushedFcn)
                 comp.FinishButtonPushedFcn(comp, eventData)
             end
@@ -112,10 +112,8 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         % Button pushed function: OkButton
         function OkButtonPushed(comp, src, event)
             finishState = 'Finished';
-            comp.OkButton.ButtonPushedFcn = [];
-
             eventData = structeditor.eventdata.FinishStateSet(finishState);
-            %notify(comp, 'FinishButtonPushed', eventData);
+
             if ~isempty(comp.FinishButtonPushedFcn)
                 comp.FinishButtonPushedFcn(comp, eventData)
             end
