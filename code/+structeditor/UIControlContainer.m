@@ -324,7 +324,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
 
         function hControl = createControl(obj, iRow, name, value, config)
 
-            if nargin < 4; config = []; end
+            if nargin < 5; config = []; end
             
             parentContainer = obj.UIGridLayout;
 
@@ -332,6 +332,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             if ~isempty(config) % TODO.
                 if ischar( config )
                     hControl = feval(config, parentContainer);
+                elseif ischar(value) && iscell(config)
+                    % Makes it backwards-compatible
+                    value = categorical({value}, config);
+                    hControl = obj.createControl(iRow, name, value, []);
+                    return
+
                 elseif isa( config, 'function_handle' )
                     % Create component from custom function handle
                     hControl = config(parentContainer);
@@ -349,14 +355,14 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                         hControl = uieditfield(parentContainer);
     
                     case {'single', 'double'}
-                        hControl = uieditfield(parentContainer, 'numeric');
+                        hControl = uieditfield(parentContainer, 'numeric', 'AllowEmpty', 'on');
     
                     case {'uint8'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,255]);
+                        hControl = uispinner(parentContainer, 'Limits', [0,255], 'AllowEmpty', 'on');
                         value = double(value);
     
                     case {'uint16'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,2^16-1]);
+                        hControl = uispinner(parentContainer, 'Limits', [0,2^16-1], 'AllowEmpty', 'on');
                         value = double(value);
     
                     case 'categorical'
@@ -379,7 +385,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 value = []; % 0x1 and 1x0 not supported in numeric controls.
             end
 
-            obj.placeUIControl(hControl, iRow)
+            try
+                obj.placeUIControl(hControl, iRow)
+            catch
+                keyboard
+            end
 
             hControl.Tag = name;
              
