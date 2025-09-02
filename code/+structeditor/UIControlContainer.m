@@ -107,7 +107,21 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 elseif isa(hControls(i), 'matlab.ui.control.DropDown')
                     hControls(i).Value = hControls(i).Items{1};
                 else
-                    hControls(i).Value(:) = [];
+                    if isprop(hControls(i), 'Value')
+                        if isa(hControls(i), 'matlab.ui.control.TextArea')
+                            hControls(i).Value(:) = {''};
+                        elseif isa(hControls(i), 'matlab.ui.control.DatePicker')
+                            hControls(i).Value(:) = NaT;
+                        else
+                            hControls(i).Value(:) = [];
+                        end
+                    else
+                        warning([...
+                            'Could not reset control for "%s" because ', ...
+                            'controls of type `%s` does not have a Value ', ...
+                            'property'], ...
+                            hControls(i).Tag, class(hControls(i)))
+                    end
                 end
             end
         end
