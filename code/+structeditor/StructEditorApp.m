@@ -115,9 +115,27 @@ classdef StructEditorApp < handle & ...
                 obj.updateTheme( obj.UIFigure )
             end
         end
+    
+        function delete(obj)
+            uiresume(obj.UIFigure)
+            drawnow
+            pause(0.05)
+            
+            delete(obj.UIControlContainers)
+            delete(obj.Footer)
+            delete(obj.UIFigure)
+        end
     end
 
     methods
+        function alwaysOnTop(obj)
+            obj.UIFigure.WindowStyle = "alwaysontop";
+        end
+
+        function normalMode(obj)
+            obj.UIFigure.WindowStyle = "normal";
+        end
+
         function uiwait(obj, preventClose)
             if nargin == 2
                 obj.CloseOnExit = ~preventClose;
@@ -192,13 +210,7 @@ classdef StructEditorApp < handle & ...
     methods (Access = private) % Property post set methods
         function onUIFigureCloseRequest(obj, src, event)
             if obj.CloseOnExit
-                uiresume(obj.UIFigure)
-                drawnow
-                pause(0.05)
-                
-                delete(obj.UIControlContainers)
-                delete(obj.Footer)
-                delete(obj.UIFigure)
+                delete(obj)
             else
                 uiresume(obj.UIFigure)
             end
