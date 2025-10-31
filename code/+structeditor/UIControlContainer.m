@@ -112,6 +112,8 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                             hControls(i).Value(:) = {''};
                         elseif isa(hControls(i), 'matlab.ui.control.DatePicker')
                             hControls(i).Value(:) = NaT;
+                        elseif isa(hControls(i), 'matlab.ui.control.CheckBox')
+                            hControls(i).Value(:) = false;
                         else
                             hControls(i).Value(:) = [];
                         end
