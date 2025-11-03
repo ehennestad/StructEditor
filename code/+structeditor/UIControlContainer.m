@@ -7,6 +7,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
     properties (Dependent)
         Data (1,1) struct
         Visible (1,1) matlab.lang.OnOffSwitchState
+        Enabled (1,1) matlab.lang.OnOffSwitchState
     end
 
     properties
@@ -41,9 +42,10 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
     properties (Access = private)
         IsConstructed = false;
         Visible_ (1,1) matlab.lang.OnOffSwitchState = 'on'
+        Enabled_ (1,1) matlab.lang.OnOffSwitchState = 'on'
     end
 
-    properties (SetAccess = immutable, GetAccess = private) %?
+    properties (SetAccess = protected, GetAccess = private) %?
         FontName = 'Avenir Next'
         FontSize = 14
         RowHeight = 25; % Height of row in pixels
@@ -168,6 +170,16 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             obj.postSetLabelPosition()
         end
 
+        function set.Enabled(obj, value)
+            obj.Enabled_ = value;
+            if obj.IsConstructed
+                obj.updateControlsEnabled()
+            end
+        end
+        function value = get.Enabled(obj)
+            value = obj.Enabled_;
+        end
+
         function set.RowSpacing(obj, value)
             obj.RowSpacing = value;
             obj.postSetRowSpacing()
@@ -225,6 +237,21 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         function postSetColumnSpacing(obj)
             if ~isempty(obj.UIGridLayout)
                 obj.updateGridLayoutSize()
+            end
+        end
+
+        function updateControlsEnabled(obj)
+            % Update the enabled state of all controls
+            if isempty(obj.UIControls)
+                return
+            end
+            
+            controlNames = fieldnames(obj.UIControls);
+            for i = 1:numel(controlNames)
+                hControl = obj.UIControls.(controlNames{i});
+                if isprop(hControl, 'Enable')
+                    hControl.Enable = obj.Enabled_;
+                end
             end
         end
     end
@@ -429,6 +456,10 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 fieldValue = obj.formatValueForControl(value);
                 hControl.Value = fieldValue;
                 hControl.ValueChangedFcn = @obj.onFieldValueChanged;
+            end
+
+            if isprop(hControl, 'Enable')
+                hControl.Enable = obj.Enabled_;
             end
 
             try
