@@ -8,6 +8,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         Data (1,1) struct
         Visible (1,1) matlab.lang.OnOffSwitchState
         Enabled (1,1) matlab.lang.OnOffSwitchState
+        Editable (1,1) matlab.lang.OnOffSwitchState
     end
 
     properties
@@ -43,6 +44,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
         IsConstructed = false;
         Visible_ (1,1) matlab.lang.OnOffSwitchState = 'on'
         Enabled_ (1,1) matlab.lang.OnOffSwitchState = 'on'
+        Editable_ (1,1) matlab.lang.OnOffSwitchState = 'on'
     end
 
     properties (SetAccess = protected, GetAccess = private) %?
@@ -180,6 +182,16 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             value = obj.Enabled_;
         end
 
+        function set.Editable(obj, value)
+            obj.Editable_ = value;
+            if obj.IsConstructed
+                obj.updateControlsEditable()
+            end
+        end
+        function value = get.Editable(obj)
+            value = obj.Editable_;
+        end
+
         function set.RowSpacing(obj, value)
             obj.RowSpacing = value;
             obj.postSetRowSpacing()
@@ -251,6 +263,21 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 hControl = obj.UIControls.(controlNames{i});
                 if isprop(hControl, 'Enable')
                     hControl.Enable = obj.Enabled_;
+                end
+            end
+        end
+
+        function updateControlsEditable(obj)
+            % Update the enabled state of all controls
+            if isempty(obj.UIControls)
+                return
+            end
+            
+            controlNames = fieldnames(obj.UIControls);
+            for i = 1:numel(controlNames)
+                hControl = obj.UIControls.(controlNames{i});
+                if isprop(hControl, 'Editable')
+                    hControl.Editable = obj.Editable_;
                 end
             end
         end
