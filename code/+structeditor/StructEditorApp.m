@@ -117,13 +117,16 @@ classdef StructEditorApp < handle & ...
         end
     
         function delete(obj)
-            uiresume(obj.UIFigure)
-            drawnow
-            pause(0.05)
-            
-            delete(obj.UIControlContainers)
-            delete(obj.Footer)
-            delete(obj.UIFigure)
+            if ~isempty(obj.UIFigure) && isvalid(obj.UIFigure)
+                uiresume(obj.UIFigure)
+                
+                drawnow
+                pause(0.05)
+                
+                delete(obj.UIControlContainers)
+                delete(obj.Footer)
+                delete(obj.UIFigure)
+            end
         end
     end
 
@@ -159,7 +162,7 @@ classdef StructEditorApp < handle & ...
     
         function reset(obj)
             for i = 1:numel(obj.UIControlContainers)
-                obj.UIControlContainers.reset()
+                obj.UIControlContainers(i).reset()
             end
             obj.FinishState = "";
         end
@@ -184,10 +187,15 @@ classdef StructEditorApp < handle & ...
             obj.Title = value;
             obj.postSetTitle()
         end
-        
+
         function set.Description(obj, value)
             obj.Description = value;
             obj.postSetDescription()
+        end
+
+        function set.Data(obj, value)
+            obj.Data = value;
+            obj.postSetData()
         end
 
         function set.LabelPosition(obj, value)
@@ -225,6 +233,30 @@ classdef StructEditorApp < handle & ...
         function postSetDescription(obj)
             if ~isempty(obj.Header)
                 obj.Header.Text = obj.Description;
+            end
+        end
+
+        function postSetData(obj)
+            % Update UIControlContainers with new data
+            if ~isempty(obj.UIControlContainers)
+                for i = 1:numel(obj.UIControlContainers)
+                    if isvalid(obj.UIControlContainers(i))
+                        % NB/Todo: Currently only works for scalar data...
+                        obj.UIControlContainers(i).Data = obj.Data;
+                    end
+                end
+            end
+            
+            % Update data tree if nested structs are enabled
+            if obj.EnableNestedStruct
+                obj.DataTree = structeditor.utility.getTreeStruct(obj.Data);
+                if ~isempty(obj.DataTree.children) && obj.ShowSidebar
+                    % Update sidebar menu if it exists
+                    if ~isempty(obj.SidebarMenu) && isvalid(obj.SidebarMenu)
+                        % Note: SidebarMenu would need an update method to refresh
+                        % For now, this handles the data tree update
+                    end
+                end
             end
         end
 
