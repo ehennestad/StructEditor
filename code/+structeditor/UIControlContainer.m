@@ -130,6 +130,45 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     end
                 end
             end
+            obj.resetData();
+        end
+
+        function resetData(obj)
+            % Reset all data fields to empty values
+            fieldNames = fieldnames(obj.DataModified);
+            [fieldNames, ~] = structeditor.utility.popConfigFields(fieldNames);
+            
+            for i = 1:numel(fieldNames)
+                fieldName = fieldNames{i};
+                currentValue = obj.DataModified.(fieldName);
+                
+                % Set to appropriate empty value based on type
+                switch class(currentValue)
+                    case {'char', 'string'}
+                        obj.DataModified.(fieldName) = '';
+                    case {'single', 'double', 'uint8', 'uint16'}
+                        obj.DataModified.(fieldName) = [];
+                    case 'logical'
+                        obj.DataModified.(fieldName) = false;
+                    case 'categorical'
+                        % Keep the categories but select first one
+                        cats = categories(currentValue);
+                        obj.DataModified.(fieldName) = categorical({cats{1}}, cats);
+                    case 'datetime'
+                        obj.DataModified.(fieldName) = NaT;
+                    otherwise
+                        % For unknown types, try to set to empty
+                        try
+                            obj.DataModified.(fieldName) = [];
+                        catch
+                            warning('Could not reset field "%s" of type %s', ...
+                                fieldName, class(currentValue));
+                        end
+                end
+            end
+            
+            % Update the UI controls to reflect the empty values
+            obj.Data = obj.DataModified;
         end
     end
 
