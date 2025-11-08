@@ -13,7 +13,7 @@ classdef FinishButtonsTest < matlab.uitest.TestCase
             % Create a UI figure for testing (must use uifigure for uitest)
             testCase.App = uifigure('Visible', 'on');
             % Create the component under test
-            testCase.Component = structeditor.FinishButtons('Parent', testCase.App);
+            testCase.Component = structeditor.component.FinishButtons('Parent', testCase.App);
             testCase.OkButton = testCase.Component.getControl('OkButton');
             testCase.CancelButton = testCase.Component.getControl('CancelButton');
         end
@@ -168,7 +168,7 @@ classdef FinishButtonsTest < matlab.uitest.TestCase
         function testComponentCreated(testCase)
             % Verify component was created
             testCase.verifyClass(testCase.Component, ...
-                'structeditor.FinishButtons');
+                'structeditor.component.FinishButtons');
         end
         
         function testButtonsExist(testCase)

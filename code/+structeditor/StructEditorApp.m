@@ -352,7 +352,7 @@ classdef StructEditorApp < handle & ...
         end
 
         function createFooter(obj)
-            obj.Footer = structeditor.FinishButtons(obj.MainGridLayout);
+            obj.Footer = structeditor.component.FinishButtons(obj.MainGridLayout);
             obj.Footer.Layout.Row = 1 + obj.ShowHeader*2 + obj.ShowFooter*2;
             obj.Footer.Layout.Column = unique([1, 1+obj.ShowSidebar*2]);
             obj.Footer.FinishButtonPushedFcn = @obj.onFinishedButtonPushed;
