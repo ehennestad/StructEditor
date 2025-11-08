@@ -16,14 +16,16 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         CancelButtonIcon string
         CancelButtonText (1,1) string = "Cancel";
         CancelButtonType (1,1) structeditor.enum.ButtonType = 'DefaultButton';
+        
         OkButtonIcon string
         OkButtonText (1,1) string = "OK";
         OkButtonType (1,1) structeditor.enum.ButtonType = "DefaultButton";
+        
         Theme (1,1) structeditor.enum.Theme = "Light";
         FinishButtonPushedFcn
     end
     
-    methods
+    methods % Property set methods
         function set.Theme(comp, value)
             comp.Theme = value;
             comp.postSetTheme()
@@ -50,7 +52,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         end
     end
     
-    methods (Access = private)
+    methods (Access = private) % Property post-set methods
         function postSetCancelButtonText(comp)
             comp.CancelButton.Text = comp.CancelButtonText;
         end
@@ -125,7 +127,6 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         % Code that executes when the value of a public property is changed
         function update(comp)
             % Use this function to update the underlying components
-
         end
 
         % Create the underlying components

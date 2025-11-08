@@ -4,7 +4,7 @@ function treeStruct = getTreeStruct(object)
     if ~isa(object, 'struct') && ~isobject(object)
         error('Unsupported type "%s"', class(object))
     end
-    
+
     treeStruct = struct(...
             "name", "root", ...
         'fullName', "", ...
@@ -14,7 +14,7 @@ function treeStruct = getTreeStruct(object)
     treeStruct = addChildren(treeStruct, object, "");
 
     function treeStruct = addChildren(treeStruct, treeNode, fullNodeName)
-        
+
         if isa(treeNode, 'struct')
             names = fieldnames(treeNode);
         elseif structeditor.utility.isObject(treeNode)

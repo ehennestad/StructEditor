@@ -7,8 +7,8 @@ function label = varname2label(varname, includePackageName)
 %
 %   Example:
 %   label = varname2label('helloWorld')
-%   
-%   label = 
+%
+%   label =
 %       'Hello World'
 
 % Todo:
@@ -22,7 +22,7 @@ end
 if ~ischar(varname); varname = inputname(1); end
 
 % Special case if varname is a package name
-if contains(varname, '.') 
+if contains(varname, '.')
     splitVarname = strsplit(varname, '.');
     if includePackageName
         splitVarname = cellfun(@(c) structeditor.utility.varname2label(c), splitVarname, 'uni', 0);
@@ -33,31 +33,30 @@ if contains(varname, '.')
     end
 end
 
-
 % Insert spaces
 if issnakecase(varname)
 
     label = strrep(varname, '_', ' ');
-    
+
     [strInd] = regexp(label, ' ');
     strInd = [0, strInd] + 1;
-    
+
     for i = strInd
         label(i) = upper(label(i));
     end
-    
+
 elseif iscapitalized(varname)
     label = varname;
 
 elseif iscamelcase(varname)
-    
+
     % Insert space after a uppercase letter preceded by a lowercase letter
     % OR before a uppercase letter succeded by a lowercase letter
     % ie aB = 'a B' and AAb = A Ab
-    
+
     expression = '((?<=[a-z])[A-Z])|([A-Z](?=[a-z]))';
     varname = regexprep(varname, expression, ' $0');
-    
+
 % % %     capLetterStrInd = regexp(varname, '[A-Z, 1-9]');
 % % %     prevI = [];
 % % %     for i = fliplr(capLetterStrInd)
@@ -69,28 +68,24 @@ elseif iscamelcase(varname)
 
     varname(1) = upper(varname(1));
     label = varname;
-    
+
 else
     varname(1) = upper(varname(1));
     label = varname;
 end
 
 label = strtrim(label);
-
-
 end
 
 function isCamelCase = iscamelcase(varname)
-    
+
     capLetterStrInd = regexp(varname, '[A-Z]');
     if any(capLetterStrInd > 1)
         isCamelCase = true;
     else
         isCamelCase = false;
     end
-    
 end
-
 
 function isSnakeCase = issnakecase(varname)
     isSnakeCase = contains(varname, '_');
@@ -99,4 +94,3 @@ end
 function isCapitalized = iscapitalized(varname)
     isCapitalized = strcmp(varname, upper(varname)); %#ok<STCI>
 end
-
