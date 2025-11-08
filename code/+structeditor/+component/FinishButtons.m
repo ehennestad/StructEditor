@@ -1,5 +1,5 @@
 classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
-% FinishButtons - A pair of finish buttons, for proceeding or canceling
+% FinishButtons - A pair of finish buttons, for confirming and canceling
 %
 %   Visual representation:
 %      ┌────────────────────────────────────────────────┐
