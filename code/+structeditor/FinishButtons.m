@@ -50,6 +50,16 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
             comp.OkButtonText = value;
             comp.postSetOkButtonText()
         end
+
+        function set.CancelButtonIcon(comp, value)
+            comp.CancelButtonIcon = value;
+            comp.postSetCancelButtonIcon()
+        end
+        
+        function set.OkButtonIcon(comp, value)
+            comp.OkButtonIcon = value;
+            comp.postSetOkButtonIcon()
+        end
     end
     
     methods (Access = private) % Property post-set methods
@@ -59,6 +69,18 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         
         function postSetOkButtonText(comp)
             comp.OkButton.Text = comp.OkButtonText;
+        end
+
+        function postSetCancelButtonIcon(comp)
+            if ~isempty(comp.CancelButtonIcon)
+                comp.CancelButton.Icon = comp.CancelButtonIcon;
+            end
+        end
+        
+        function postSetOkButtonIcon(comp)
+            if ~isempty(comp.OkButtonIcon)
+                comp.OkButton.Icon = comp.OkButtonIcon;
+            end
         end
 
         function postSetTheme(comp)
