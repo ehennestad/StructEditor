@@ -1,16 +1,24 @@
 classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
-
-    % Properties that correspond to underlying components
-    properties (Access = private, Transient, NonCopyable)
-        GridLayout    matlab.ui.container.GridLayout
-        CancelButton  %matlab.ui.control.Button
-        OkButton      %matlab.ui.control.Button
-    end
-
-    % % % Events with associated public callbacks
-    % % events (HasCallbackProperty, NotifyAccess = private)
-    % %     FinishButtonPushed
-    % % end
+% FinishButtons - A pair of finish buttons, for proceeding or canceling
+%
+%   Visual representation:
+%      ┌────────────────────────────────────────────────┐
+%      │       ┌──────────┐          ┌──────────┐       │
+%      │       │    OK    │          │  Cancel  │       │
+%      │       └──────────┘          └──────────┘       │
+%      └────────────────────────────────────────────────┘
+%
+%   Text and icons of buttons can be customized via properties.
+%
+%   Properties:
+%       OkButtonText        - Text label for the OK button (default: "OK")
+%       OkButtonIcon        - Icon path for the OK button
+%       OkButtonType        - Style type: "DefaultButton" or "PrimaryButton"
+%       CancelButtonText    - Text label for the Cancel button (default: "Cancel")
+%       CancelButtonIcon    - Icon path for the Cancel button
+%       CancelButtonType    - Style type: "DefaultButton" or "PrimaryButton"
+%       Theme               - Theme for styling the component
+%       FinishButtonPushedFcn - Callback function executed when a button is pressed
 
     properties (Access = public)
         CancelButtonIcon string
@@ -24,7 +32,14 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         Theme (1,1) structeditor.enum.Theme = "Light";
         FinishButtonPushedFcn
     end
-    
+
+    % Properties that correspond to underlying components
+    properties (Access = private, Transient, NonCopyable)
+        GridLayout    matlab.ui.container.GridLayout
+        CancelButton  %matlab.ui.control.Button
+        OkButton      %matlab.ui.control.Button
+    end
+
     methods % Property set methods
         function set.Theme(comp, value)
             comp.Theme = value;
@@ -124,7 +139,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
     methods (Access = private)
 
         % Button pushed function: CancelButton
-        function CancelButtonPushed(comp, src, event)
+        function CancelButtonPushed(comp)
             finishState = 'Canceled';
             eventData = structeditor.eventdata.FinishStateSet(finishState);
 
@@ -134,7 +149,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
         end
 
         % Button pushed function: OkButton
-        function OkButtonPushed(comp, src, event)
+        function OkButtonPushed(comp)
             finishState = 'Finished';
             eventData = structeditor.eventdata.FinishStateSet(finishState);
 
@@ -147,7 +162,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
     methods (Access = protected)
         
         % Code that executes when the value of a public property is changed
-        function update(comp)
+        function update(comp) %#ok<MANU>
             % Use this function to update the underlying components
         end
 
@@ -167,14 +182,14 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
             if ~useCcTools
                 % Create OkButton
                 comp.OkButton = uibutton(comp.GridLayout, 'push');
-                comp.OkButton.ButtonPushedFcn = @comp.OkButtonPushed;
+                comp.OkButton.ButtonPushedFcn = @(s,e) comp.OkButtonPushed;
                 comp.OkButton.Layout.Row = 2;
                 comp.OkButton.Layout.Column = 1;
                 comp.OkButton.Text = 'OK';
     
                 % Create CancelButton
                 comp.CancelButton = uibutton(comp.GridLayout, 'push');
-                comp.CancelButton.ButtonPushedFcn = @comp.CancelButtonPushed;
+                comp.CancelButton.ButtonPushedFcn = @(s,e) comp.CancelButtonPushed;
                 comp.CancelButton.Layout.Row = 2;
                 comp.CancelButton.Layout.Column = 2;
                 comp.CancelButton.Text = 'Cancel';
@@ -187,9 +202,9 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
                 comp.OkButton.Description = '';
                 comp.OkButton.IconAlignment = 'left';
                 comp.OkButton.HorizontalAlign = 'center';
-                comp.OkButton.BorderWidth = 1;
-                comp.OkButton.BorderRadius = '5px';
-                comp.OkButton.BorderPadding = 0;
+                %comp.OkButton.BorderWidth = 1;
+                %comp.OkButton.BorderRadius = '5px';
+                %comp.OkButton.BorderPadding = 0;
                 %comp.OkButton.FontFamily = 'Gigi';
                 comp.OkButton.ButtonPushedFcn = @comp.OkButtonPushed;
                 comp.OkButton.Layout.Row = 2;
@@ -200,14 +215,20 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
                 comp.CancelButton.Model = 'Text';
                 comp.CancelButton.Description = '';
                 comp.CancelButton.HorizontalAlign = 'center';
-                comp.CancelButton.BorderWidth = 1;
-                comp.CancelButton.BorderRadius = '5px';
-                comp.CancelButton.BorderPadding = 0;
+                %comp.CancelButton.BorderWidth = 1;
+                %comp.CancelButton.BorderRadius = '5px';
+                %comp.CancelButton.BorderPadding = 0;
                 %comp.CancelButton.FontFamily = 'Gigi';
                 comp.CancelButton.ButtonPushedFcn = @comp.CancelButtonPushed;
                 comp.CancelButton.Layout.Row = 2;
                 comp.CancelButton.Layout.Column = 2;
             end
+        end
+    end
+    
+    methods (Access = ?matlab.uitest.TestCase)
+        function hControl = getControl(comp, controlName)
+            hControl = comp.(controlName);
         end
     end
 end
