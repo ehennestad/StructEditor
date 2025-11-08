@@ -126,11 +126,7 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
                     backgroundColor = comp.Theme.PrimaryButtonStyle.BackgroundColor;
             end
 
-            if isa( buttonHandle, 'ccTools.Button' )
-                buttonHandle.tFontColor = uim.utility.rgb2hex(foregroundColor);
-            else
-                buttonHandle.FontColor = foregroundColor;
-            end
+            buttonHandle.FontColor = foregroundColor;
             buttonHandle.BackgroundColor = backgroundColor;
         end
     end
@@ -178,51 +174,19 @@ classdef FinishButtons < matlab.ui.componentcontainer.ComponentContainer
             comp.GridLayout.ColumnSpacing = 30;
             comp.GridLayout.RowSpacing = 0;
 
-            useCcTools = false;
-            if ~useCcTools
-                % Create OkButton
-                comp.OkButton = uibutton(comp.GridLayout, 'push');
-                comp.OkButton.ButtonPushedFcn = @(s,e) comp.OkButtonPushed;
-                comp.OkButton.Layout.Row = 2;
-                comp.OkButton.Layout.Column = 1;
-                comp.OkButton.Text = 'OK';
-    
-                % Create CancelButton
-                comp.CancelButton = uibutton(comp.GridLayout, 'push');
-                comp.CancelButton.ButtonPushedFcn = @(s,e) comp.CancelButtonPushed;
-                comp.CancelButton.Layout.Row = 2;
-                comp.CancelButton.Layout.Column = 2;
-                comp.CancelButton.Text = 'Cancel';
+            % Create OkButton
+            comp.OkButton = uibutton(comp.GridLayout, 'push');
+            comp.OkButton.ButtonPushedFcn = @(s,e) comp.OkButtonPushed;
+            comp.OkButton.Layout.Row = 2;
+            comp.OkButton.Layout.Column = 1;
+            comp.OkButton.Text = 'OK';
 
-            else
-
-                comp.OkButton = ccTools.Button(comp.GridLayout);
-                comp.OkButton.Text = 'OK';
-                comp.OkButton.Model = 'Text';
-                comp.OkButton.Description = '';
-                comp.OkButton.IconAlignment = 'left';
-                comp.OkButton.HorizontalAlign = 'center';
-                %comp.OkButton.BorderWidth = 1;
-                %comp.OkButton.BorderRadius = '5px';
-                %comp.OkButton.BorderPadding = 0;
-                %comp.OkButton.FontFamily = 'Gigi';
-                comp.OkButton.ButtonPushedFcn = @comp.OkButtonPushed;
-                comp.OkButton.Layout.Row = 2;
-                comp.OkButton.Layout.Column = 1;
-    
-                comp.CancelButton = ccTools.Button(comp.GridLayout);
-                comp.CancelButton.Text = 'Cancel';
-                comp.CancelButton.Model = 'Text';
-                comp.CancelButton.Description = '';
-                comp.CancelButton.HorizontalAlign = 'center';
-                %comp.CancelButton.BorderWidth = 1;
-                %comp.CancelButton.BorderRadius = '5px';
-                %comp.CancelButton.BorderPadding = 0;
-                %comp.CancelButton.FontFamily = 'Gigi';
-                comp.CancelButton.ButtonPushedFcn = @comp.CancelButtonPushed;
-                comp.CancelButton.Layout.Row = 2;
-                comp.CancelButton.Layout.Column = 2;
-            end
+            % Create CancelButton
+            comp.CancelButton = uibutton(comp.GridLayout, 'push');
+            comp.CancelButton.ButtonPushedFcn = @(s,e) comp.CancelButtonPushed;
+            comp.CancelButton.Layout.Row = 2;
+            comp.CancelButton.Layout.Column = 2;
+            comp.CancelButton.Text = 'Cancel';
         end
     end
     
