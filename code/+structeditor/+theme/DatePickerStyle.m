@@ -1,13 +1,13 @@
-classdef NumericEditFieldStyle < ...
+classdef DatePickerStyle < ...
         structeditor.theme.mixin.HasBackgroundColor & ...
         structeditor.theme.mixin.HasFontStyle & ...
         structeditor.theme.mixin.HasFontColor
 
     methods (Static)
         function style = fromColorModel(colorModel)
-            style = structeditor.theme.NumericEditFieldStyle();
+            style = structeditor.theme.DatePickerStyle();
             style.BackgroundColor = colorModel.BackgroundColorEdit;
-            style.FontColor = colorModel.PrimaryColorA;
+            style.FontColor = colorModel.TextColor;
         end
     end
 end
