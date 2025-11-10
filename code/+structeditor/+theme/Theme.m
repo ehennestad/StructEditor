@@ -15,6 +15,7 @@ classdef Theme < handle
         DefaultButtonStyle
         %DashedButtonStyle
         %CheckBoxStyle
+        DatePickerStyle
         DropDownStyle
         EditFieldStyle
         NumericEditFieldStyle
@@ -75,7 +76,11 @@ classdef Theme < handle
         
         function style = get.SpinnerStyle(obj)
             style = structeditor.theme.SpinnerStyle.fromColorModel(obj.ColorModel);
-        end      
+        end
+
+        function style = get.DatePickerStyle(obj)
+            style = structeditor.theme.DatePickerStyle.fromColorModel(obj.ColorModel);
+        end 
     end
 
     methods % Methods for styling...
