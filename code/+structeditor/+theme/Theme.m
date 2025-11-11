@@ -18,6 +18,7 @@ classdef Theme < handle
         DatePickerStyle
         DropDownStyle
         EditFieldStyle
+        TextAreaStyle
         NumericEditFieldStyle
         SpinnerStyle
         LabelStyle
@@ -68,6 +69,10 @@ classdef Theme < handle
         
         function style = get.EditFieldStyle(obj)
             style = structeditor.theme.EditFieldStyle.fromColorModel(obj.ColorModel);
+        end
+
+        function style = get.TextAreaStyle(obj)
+            style = structeditor.theme.TextAreaStyle.fromColorModel(obj.ColorModel);
         end
         
         function style = get.NumericEditFieldStyle(obj)
