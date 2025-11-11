@@ -1,4 +1,4 @@
-classdef TreeMenu < handle% & ThemedComponent
+classdef TreeMenu < handle % & ThemedComponent
     
     properties
         TreeStruct

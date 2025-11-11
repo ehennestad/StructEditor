@@ -5,22 +5,26 @@ classdef Theme < handle & structeditor.theme.Theme
 % given theme must have a matching name.
 
     enumeration
-        Light('light')
-        Dark('dark')
-        DarkAubergine('dark-aubergine')
-        NDI('ndi')
+        Light('light', 'light')
+        Dark('dark', 'dark')
+        DarkAubergine('dark-aubergine', 'dark')
+        NDI('ndi', 'light')
     end
 
     properties (SetAccess = immutable, GetAccess = private)
         Name
     end
+    properties (SetAccess = immutable, GetAccess = public)
+        BaseColorStyle
+    end
     
     methods
-        function obj = Theme(name)
+        function obj = Theme(name, baseColorStyle)
             colorModel = structeditor.enum.Theme.loadTheme(name);
             obj = obj@structeditor.theme.Theme(colorModel)
             
             obj.Name = name;
+            obj.BaseColorStyle = baseColorStyle;
         end
 
         function saveColorModel(obj)
