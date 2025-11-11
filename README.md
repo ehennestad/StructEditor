@@ -3,7 +3,7 @@ A MATLAB app for interactively editing structure data in a dialog-style window. 
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/05566c97-9c79-4eb8-96fa-9e970ac10c4e">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/97049414-44f8-4ad8-b5d4-ac027649a2a1">
     <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/ea31a3c6-ff66-4580-a96d-4a0c8a650795">
     <img alt="uiform example" src="https://github.com/user-attachments/assets/ea31a3c6-ff66-4580-a96d-4a0c8a650795" title="uiform" align="centre" width="672" height="440"​>
   </picture>
