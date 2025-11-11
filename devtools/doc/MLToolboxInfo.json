@@ -1,0 +1,14 @@
+{
+    "Namespace" : "structeditor",
+    "ToolboxOptions": {
+        "Identifier": "1b73c9ff-206b-426e-ac67-2e92aa02cfcd",
+        "ToolboxName": "StructEditor",
+        "AuthorName": "Eivind Hennestad",
+        "AuthorEmail": "eivihe@uio.no",
+        "AuthorCompany": "",
+        "Summary": "An app for editing MATLAB structs in a dialog-window",
+        "Description": "Provides an app that dynamically builds uicontrols for editing a MATLAB structure with support for using customized controls",
+        "MinimumMatlabRelease": "R2020b",
+        "MaximumMatlabRelease": ""
+    }
+}
