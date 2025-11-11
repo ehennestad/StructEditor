@@ -42,17 +42,37 @@ updatedEmployee = uiform(employee, ...
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/364e840c-0a97-49c2-87cb-f5184be4da01">
     <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/17b92420-4a62-4957-8e37-93e7d93c8076">
-    <img alt="uiform example 1" src="https://github.com/user-attachments/assets/ea31a3c6-ff66-4580-a96d-4a0c8a650795" title="uiform example 1" align="centre" width="672" height="620"​>
+    <img alt="uiform example 1" src="https://github.com/user-attachments/assets/17b92420-4a62-4957-8e37-93e7d93c8076" title="uiform example 1" align="centre" width="672" height="620"​>
   </picture>
-  <br>
-  <em>Figure: Screenshot showing the uiform dialog for example 1</em>
 </p>
 
 ### Example 2: Use custom field configuration
 Todo: 
 
 ### Example 3: Use external custom components
-Todo: 
+This example uses a custom component from FileExchange called [Rating](https://se.mathworks.com/matlabcentral/fileexchange/166231-rating-app-component).
+
+```matlab
+feedback = struct();
+feedback.Rating = [];
+feedback.Rating_ = @Rating;
+feedback.Feedback = '';
+feedback.Feedback_ = @uitextarea;
+
+completedFeedback = uiform(feedback, ...
+    "Title", "Feedback", ...
+    "Description", "Please leave a rating and provide feedback", ...
+    "Height", 300);
+```
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/0e6764fb-3e2f-4389-b431-699f5deda624">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/bb661451-8220-4038-8374-ed692de238b5">
+    <img alt="uiform example 3" src="https://github.com/user-attachments/assets/bb661451-8220-4038-8374-ed692de238b5" title="uiform example 3" align="centre" width="672" height="440"​>
+  </picture>
+</p>
+
 
 ## Related Projects
 - https://github.com/ehennestad/WidgetTable
