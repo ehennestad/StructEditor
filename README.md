@@ -47,7 +47,44 @@ updatedEmployee = uiform(employee, ...
 </p>
 
 ### Example 2: Use custom field configuration
-Todo: 
+This example demonstrates how to customize UI components using configuration fields (field name + underscore) with function handles and name-value pairs.
+
+```matlab
+userProfile = struct();
+userProfile.Username = 'johndoe';
+userProfile.Username_ = @(parent) uieditfield(parent, 'text', ...
+    'Placeholder', 'Enter username...', ...
+    'ValueChangedFcn', @(src,~) set(src, 'Value', lower(src.Value)));
+
+userProfile.Bio = 'Tell us about yourself';
+userProfile.Bio_ = @(parent) uitextarea(parent, ...
+    'Placeholder', 'Write your bio here...', ...
+    'MaxLength', 500);
+
+userProfile.SkillLevel = 5;
+userProfile.SkillLevel_ = @(parent) uislider(parent, ...
+    'Limits', [1 10], ...
+    'MajorTicks', 1:10, ...
+    'MinorTicks', []);
+
+userProfile.NotifyByEmail = true;
+userProfile.NotifyBySMS = false;
+
+updatedProfile = uiform(userProfile, ...
+    "Title", "User Profile", ...
+    "Description", "Customize your profile settings", ...
+    "Height", 450);
+```
+
+<p align="center">
+  <em>This example shows how configuration fields allow you to:</em>
+  <br>
+  • Use function handles to specify custom UI components
+  <br>
+  • Pass name-value pairs to customize component properties
+  <br>
+  • Add interactive behaviors like placeholders and value validation
+</p> 
 
 ### Example 3: Use external custom components
 This example uses a custom component from FileExchange called [Rating](https://se.mathworks.com/matlabcentral/fileexchange/166231-rating-app-component).
