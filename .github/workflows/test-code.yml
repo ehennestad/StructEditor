@@ -40,3 +40,6 @@ jobs:
       matlab_use_cache: true
 
       install_virtual_display: true
+
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
