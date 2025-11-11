@@ -53,13 +53,11 @@ This example demonstrates how to customize UI components using configuration fie
 userProfile = struct();
 userProfile.Username = 'johndoe';
 userProfile.Username_ = @(parent) uieditfield(parent, 'text', ...
-    'Placeholder', 'Enter username...', ...
-    'ValueChangedFcn', @(src,~) set(src, 'Value', lower(src.Value)));
+    'Placeholder', 'Enter username...');
 
 userProfile.Bio = 'Tell us about yourself';
 userProfile.Bio_ = @(parent) uitextarea(parent, ...
-    'Placeholder', 'Write your bio here...', ...
-    'MaxLength', 500);
+    'Placeholder', 'Write your bio here...');
 
 userProfile.SkillLevel = 5;
 userProfile.SkillLevel_ = @(parent) uislider(parent, ...
@@ -75,16 +73,19 @@ updatedProfile = uiform(userProfile, ...
     "Description", "Customize your profile settings", ...
     "Height", 450);
 ```
-
 <p align="center">
-  <em>This example shows how configuration fields allow you to:</em>
-  <br>
-  • Use function handles to specify custom UI components
-  <br>
-  • Pass name-value pairs to customize component properties
-  <br>
-  • Add interactive behaviors like placeholders and value validation
-</p> 
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=""https://github.com/user-attachments/assets/735a0706-4fb6-47f7-95f3-05f8c9e3317e">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/45a5ec6d-2d35-4e76-80c3-58ef8471ac50">
+    <img alt="uiform example 2" src="https://github.com/user-attachments/assets/45a5ec6d-2d35-4e76-80c3-58ef8471ac50" title="uiform example 2" align="centre" width="672" height="590"​>
+  </picture>
+</p>
+
+This example shows how configuration fields allow you to:
+
+- Use function handles to specify custom UI components
+- Pass name-value pairs to customize component properties
+- Add interactive behaviors like placeholders
 
 ### Example 3: Use external custom components
 This example uses a custom component from FileExchange called [Rating](https://se.mathworks.com/matlabcentral/fileexchange/166231-rating-app-component).
