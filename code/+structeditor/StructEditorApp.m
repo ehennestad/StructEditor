@@ -80,14 +80,15 @@ classdef StructEditorApp < handle & ...
             arguments
                 data % struct
                 propValues.Title = "Edit Struct"
-                propValues.Theme = structeditor.enum.Theme.Light
+                propValues.Theme (1,1) string = "" % Use system default
                 propValues.LoadingHtmlSource = ''
                 propValues.EnableNestedStruct = 'off'
             end
             
-            % Todo: Before or after setting data and creating controls?
-            propNvPairs = namedargs2cell(propValues);
-            obj.set(propNvPairs{:});
+            % Set properties (excluding Theme which is handled by HasTheme)
+            obj.Title = propValues.Title;
+            obj.LoadingHtmlSource = propValues.LoadingHtmlSource;
+            obj.EnableNestedStruct = propValues.EnableNestedStruct;
 
             obj.Data = data;
 
@@ -103,20 +104,26 @@ classdef StructEditorApp < handle & ...
             % Step 2: Create UI components
             obj.setup()
 
+            % Step 3: Initialize theme AFTER figure is created
+            % This automatically handles both R2025a+ and legacy versions
+            obj.initializeTheme(obj.UIFigure, propValues.Theme);
+            
+            % Add callback to update custom themed components
+            obj.addThemeChangedCallback(@obj.onThemeChanged);
             % obj.createControls() Todo...
             % Create the UIControlContainer
             H = structeditor.UIControlContainer(obj.ControlPanel, obj.Data, ...
-                'Theme', obj.Theme, 'LoadingHtmlSource', obj.LoadingHtmlSource);
+                'LoadingHtmlSource', obj.LoadingHtmlSource, ...
+                'LabelPosition', obj.LabelPosition); %'Theme', obj.ThemeObject,
             obj.UIControlContainers = H;
 
-            % Apply theme...
-            %obj.Theme = structeditor.enum.Theme.NDI;
-            if ~isempty(obj.Theme)
-                obj.updateTheme( obj.UIFigure )
-            end
+            obj.onThemeChanged()
         end
     
         function delete(obj)
+            % Clean up theme manager
+            %obj.cleanupTheme();
+            
             if ~isempty(obj.UIFigure) && isvalid(obj.UIFigure)
                 uiresume(obj.UIFigure)
                 
@@ -291,6 +298,36 @@ classdef StructEditorApp < handle & ...
             
             obj.close()
         end
+        
+        function onThemeChanged(obj, ~, ~)
+            % Called when theme changes (system or programmatic)
+            % Update custom themed components
+            
+            % Get current theme object for components that need it
+            themeObj = obj.ThemeObject;
+            
+            % Update footer
+            if ~isempty(obj.Footer) && isvalid(obj.Footer)
+                obj.Footer.Theme = themeObj;
+            end
+            
+            % Update control containers
+            for i = 1:numel(obj.UIControlContainers)
+                if isvalid(obj.UIControlContainers(i))
+                    obj.UIControlContainers(i).Theme = themeObj;
+                end
+            end
+            
+            % Update separators with theme colors
+            if ~isempty(obj.UISeparators)
+                set(obj.UISeparators, 'BackgroundColor', themeObj.ColorModel.BorderColor);
+            end
+            
+            % Update sidebar if it exists
+            if ~isempty(obj.SidebarMenu) && isvalid(obj.SidebarMenu)
+                obj.SidebarMenu.Theme = themeObj;
+            end
+        end
     end
 
     methods (Access = private) % Component creation
@@ -340,7 +377,7 @@ classdef StructEditorApp < handle & ...
             obj.SidebarPanel.Tag = "Sidemenu Panel";
 
 
-            obj.SidebarMenu = structeditor.TreeMenu(obj.SidebarPanel, dataTree, obj.Theme);
+            obj.SidebarMenu = structeditor.TreeMenu(obj.SidebarPanel, dataTree, obj.ThemeObject);
             obj.SidebarMenu.SelectionChangedFcn = @obj.onDataGroupChanged;
         end
 
@@ -359,46 +396,24 @@ classdef StructEditorApp < handle & ...
         end
     end
 
-    methods (Access = protected)
-        function updateTheme(obj, figureHandle )
-            updateTheme@structeditor.mixin.HasTheme(obj, figureHandle)
-
-            % Apply to themed components...
-            obj.Footer.Theme = obj.Theme; % Todo...
-
-            % Update separators.
-            set(obj.UISeparators, 'BackgroundColor', obj.Theme.ColorModel.BorderColor)
-            %obj.UIControlContainers.UIGridLayout.BackgroundColor = 'w';
-        end
-    end 
-
     methods (Access = private)
         function setup(obj)
 
             % Initialize figure 
             obj.UIFigure = uifigure();
             obj.UIFigure.Name = obj.Title;
-            if ~isempty(obj.Theme)
-                obj.Theme.styleComponent(obj.UIFigure)
-            end
             obj.UIFigure.CloseRequestFcn = @obj.onUIFigureCloseRequest;
 
             % Create grid layout
             obj.MainGridLayout = uigridlayout(obj.UIFigure);
             obj.MainGridLayout.Padding = [25, 10, 25, 10];
             obj.MainGridLayout.Tag = "Main Grid Layout";
-            if ~isempty(obj.Theme)
-                obj.Theme.styleComponent(obj.MainGridLayout)
-            end
 
             % Create main component panel
             obj.ControlPanel = uipanel(obj.MainGridLayout);
             obj.ControlPanel.Title = "";
             obj.ControlPanel.BorderType = "none";
             obj.ControlPanel.Tag = "Control Panel";
-            if ~isempty(obj.Theme)
-                obj.Theme.styleComponent(obj.ControlPanel)
-            end
 
             obj.updateMainGridLayout()
 
