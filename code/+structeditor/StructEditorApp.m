@@ -53,6 +53,8 @@ classdef StructEditorApp < handle & ...
         HeaderHeight = 50
         FooterHeight = 50
         SidebarWidth = 150
+        Width = 560
+        Height = 420 
         LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
         LoadingHtmlSource
         EnableNestedStruct matlab.lang.OnOffSwitchState = 'off' 
@@ -80,15 +82,22 @@ classdef StructEditorApp < handle & ...
             arguments
                 data % struct
                 propValues.Title = "Edit Struct"
+                propValues.Description
                 propValues.Theme (1,1) string = "" % Use system default
                 propValues.LoadingHtmlSource = ''
                 propValues.EnableNestedStruct = 'off'
+                propValues.Width = 560
+                propValues.Height = 420
+                propValues.OkButtonText = 'Ok'
+                propValues.CloseOnExit
             end
             
+            if isfield(propValues, 'Theme')
+                theme = propValues.Theme; propValues = rmfield(propValues, 'Theme');
+            end
+
             % Set properties (excluding Theme which is handled by HasTheme)
-            obj.Title = propValues.Title;
-            obj.LoadingHtmlSource = propValues.LoadingHtmlSource;
-            obj.EnableNestedStruct = propValues.EnableNestedStruct;
+            obj.set(propValues)
 
             obj.Data = data;
 
@@ -106,7 +115,7 @@ classdef StructEditorApp < handle & ...
 
             % Step 3: Initialize theme AFTER figure is created
             % This automatically handles both R2025a+ and legacy versions
-            obj.initializeTheme(obj.UIFigure, propValues.Theme);
+            obj.initializeTheme(obj.UIFigure, theme);
             
             % Add callback to update custom themed components
             obj.addThemeChangedCallback(@obj.onThemeChanged);
@@ -403,6 +412,8 @@ classdef StructEditorApp < handle & ...
             obj.UIFigure = uifigure();
             obj.UIFigure.Name = obj.Title;
             obj.UIFigure.CloseRequestFcn = @obj.onUIFigureCloseRequest;
+            obj.UIFigure.Position(3) = obj.Width;
+            obj.UIFigure.Position(4) = obj.Height;
 
             % Create grid layout
             obj.MainGridLayout = uigridlayout(obj.UIFigure);
@@ -447,6 +458,12 @@ classdef StructEditorApp < handle & ...
 
         function close(obj)
             obj.onUIFigureCloseRequest()
+        end
+    end
+
+    methods (Access = ?matlab.uitest.TestCase)
+        function hControl = getComponent(comp, controlName)
+            hControl = comp.(controlName);
         end
     end
 end
