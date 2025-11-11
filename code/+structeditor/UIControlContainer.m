@@ -1,8 +1,8 @@
-% UIControlContainer
-classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structeditor.mixin.HasTheme
-    
-    % Todo:
-    %   Setting for label position, i.e left or above
+classdef UIControlContainer < handle ...
+        & matlab.mixin.SetGetExactNames ...
+        & structeditor.mixin.ComponentHasTheme
+% UIControlContainer - Container for laying out and creating uicontrols for
+% a data structure
 
     properties (Dependent)
         Data (1,1) struct
@@ -65,15 +65,17 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 propValues.ColumnSpacing
                 propValues.Theme
                 propValues.LoadingHtmlSource
+                propValues.LabelPosition
             end
-            % if isfield(propValues, 'Theme')
-            %     superArgs = {'Theme', propValues.Theme};
-            %     propValues = rmfield(propValues, 'Theme');
-            % else
-            %     superArgs = {};
-            % end
-            % obj = obj@structeditor.mixin.HasTheme(superArgs{:})
             
+            if isfield(propValues, 'Theme')
+                superArgs = {'Theme', propValues.Theme};
+                propValues = rmfield(propValues, 'Theme');
+            else
+                superArgs = {};
+            end
+            obj = obj@structeditor.mixin.ComponentHasTheme(superArgs{:})
+
             obj.set(propValues);
 
             obj.Parent = hParent;
@@ -83,8 +85,6 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 g = uigridlayout(hParent, 'ColumnWidth', {'1x'},'RowHeight', {'1x'}, 'Padding', 75 );
                 h = uihtml(g, "HTMLSource", obj.LoadingHtmlSource);
             end
-
-            % Todo: Assign property values
 
             % Create grid layout
             obj.createGridLayout()
@@ -153,7 +153,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     case 'categorical'
                         % Keep the categories but select first one
                         cats = categories(currentValue);
-                        obj.DataModified.(fieldName) = categorical({cats{1}}, cats);
+                        obj.DataModified.(fieldName) = categorical(cats(1), cats);
                     case 'datetime'
                         obj.DataModified.(fieldName) = NaT;
                     otherwise
@@ -334,7 +334,6 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             %obj.UIGridLayout.RowSpacing = obj.RowSpacing;
         
             obj.UIGridLayout.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
-            %obj.UIGridLayout.BackgroundColor = "white";
             obj.UIGridLayout.Scrollable = true;
         end
 
@@ -421,7 +420,7 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             end
         end
 
-        function config = getConfigField(obj, data, name)
+        function config = getConfigField(~, data, name) % Todo: static?
             if isfield(data, name+"_")
                 config = data.(name+"_");
             else
@@ -501,16 +500,12 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                 value = []; % 0x1 and 1x0 not supported in numeric controls.
             end
 
-            try
-                obj.placeUIControl(hControl, iRow)
-            catch
-                keyboard
-            end
+            obj.placeUIControl(hControl, iRow)
 
             hControl.Tag = name;
              
             if isprop(hControl, 'BackgroundColor')
-                %hControl.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
+                hControl.BackgroundColor = obj.Theme.ColorModel.BackgroundColor;
             end
             if isprop(hControl, 'FontColor')
                 hControl.FontColor = obj.Theme.ColorModel.TextColor;
@@ -527,11 +522,11 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             if isprop(hControl, 'Enable')
                 hControl.Enable = obj.Enabled_;
             end
-
-            try
-                drawnow
-                %ccTools.compCustomization(hControl, 'borderRadius', "5px")
-            end
+            
+            % try Consider integrating
+            %     % drawnow
+            %     %ccTools.compCustomization(hControl, 'borderRadius', "5px")
+            % end
         end
     
         function value = formatValueForControl(obj, value) %#ok<INUSD>
@@ -553,7 +548,6 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
                     end
             end
         end
-    
     end
 
     methods
@@ -574,9 +568,9 @@ classdef UIControlContainer < handle & matlab.mixin.SetGetExactNames & structedi
             end
         end
 
-        function onFieldValueChanging(obj, src, evt)
-            % Todo.
-            % Todo. look at the decorators from weblab, i.e throttle and
+        function onFieldValueChanging(~, ~, ~)
+            % Todo. Not implemented yet
+            % Todo. Look at the decorators from weblab, i.e throttle and
             % debounce
         end
     end
