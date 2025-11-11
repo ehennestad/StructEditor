@@ -8,7 +8,9 @@ A MATLAB app for interactively editing structure data in a dialog-style window. 
     <img alt="uiform example" src="https://github.com/user-attachments/assets/ea31a3c6-ff66-4580-a96d-4a0c8a650795" title="uiform" align="centre" width="672" height="440"​>
   </picture>
   <br>
-  <em>Figure: Screenshot showing the result of running <code>uiform(struct("givenName", "Joe", "familyName", "Doe"))</code>.</em>
+  <em>Figure: Screenshot showing the result of running:</em>
+  <br>
+  <code>uiform(struct("givenName", "Joe", "familyName", "Doe"))</code>
 </p>
 
 ___
