@@ -1,5 +1,6 @@
 classdef TreeMenu < handle % & ThemedComponent
-    
+% TreeMenu - A component for displaying a tree menu represening nodes of a structure
+
     properties
         TreeStruct
         SelectionChangedFcn
@@ -28,6 +29,7 @@ classdef TreeMenu < handle % & ThemedComponent
             end
         end
     end
+    
     methods (Access = private)
         function addNodes(obj, parentNode, treeStruct)
 
