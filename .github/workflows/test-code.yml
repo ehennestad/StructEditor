@@ -38,4 +38,5 @@ jobs:
       
       # Whether to cache the MATLAB installation for faster subsequent setups
       matlab_use_cache: true
-      
+
+      install_virtual_display: true
