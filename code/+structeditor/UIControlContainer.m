@@ -476,12 +476,10 @@ classdef UIControlContainer < handle ...
                     case {'single', 'double'}
                         hControl = uieditfield(parentContainer, 'numeric', 'AllowEmpty', 'on');
     
-                    case {'uint8'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,255], 'AllowEmpty', 'on');
-                        value = double(value);
-    
-                    case {'uint16'}
-                        hControl = uispinner(parentContainer, 'Limits', [0,2^16-1], 'AllowEmpty', 'on');
+                    case {'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'}
+                        lowerLimit = intmin(class(value)); upperLimit = intmax(class(value));
+                        limits = double([lowerLimit, upperLimit]);
+                        hControl = uispinner(parentContainer, 'Limits', limits, 'AllowEmpty', 'on', 'ValueDisplayFormat', '%d');
                         value = double(value);
     
                     case 'categorical'
@@ -558,7 +556,11 @@ classdef UIControlContainer < handle ...
             oldValue = obj.DataModified.(fieldName);
             newValue = evt.Value;
 
-            obj.DataModified.(fieldName) = newValue;
+            if isnumeric(oldValue)
+                obj.DataModified.(fieldName) = cast(newValue, 'like', oldValue);
+            else
+                obj.DataModified.(fieldName) = newValue;
+            end
 
             % Todo: Value changed...
             if ~isempty(obj.ValueChangedFcn)
