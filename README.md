@@ -23,7 +23,30 @@ ___
 ## Examples
 
 ### Example 1: Edit a basic structure
-Todo: 
+```matlab
+employee = struct();
+employee.Name = 'John Doe';
+employee.Age = uint8(30);
+employee.Email = 'john.doe@example.com';
+employee.IsActive = true;
+employee.Department = categorical({'Engineering'}, {'Engineering', 'Sales', 'Marketing', 'HR'});
+employee.StartDate = datetime('2020-01-15');
+employee.Salary = int64(75000);
+
+updatedEmployee = uiform(employee, ...
+    "Title", "Employee Info", ...
+    "Description", "Edit employee details:", ...
+    "Height", 480);
+```
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/364e840c-0a97-49c2-87cb-f5184be4da01">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/17b92420-4a62-4957-8e37-93e7d93c8076">
+    <img alt="uiform example 1" src="https://github.com/user-attachments/assets/ea31a3c6-ff66-4580-a96d-4a0c8a650795" title="uiform example 1" align="centre" width="672" height="620"​>
+  </picture>
+  <br>
+  <em>Figure: Screenshot showing the uiform dialog for example 1</em>
+</p>
 
 ### Example 2: Use custom field configuration
 Todo: 
