@@ -15,10 +15,70 @@ A MATLAB app for interactively editing structure data in a dialog-style window. 
 
 ___
 
+## Features
+
+- **Automatic UI Generation**: Automatically creates appropriate UI controls based on field data types
+- **Custom Components**: Use function handles to specify custom UI components with full control over properties
+- **Configuration Fields**: Customize any field's UI component using the `fieldname_` pattern
+- **Theme Support**: Built-in light and dark themes that adapt to your preferences
+- **Multiple Data Types**: Native support for strings, numbers, logicals, categorical, datetime, and more
+- **External Components**: Integrate custom components from MATLAB File Exchange or your own libraries
+
+## Quick Start
+
+```matlab
+% Simple example - struct in, edited struct out
+S = struct("name", "Jane", "age", 25, "active", true);
+S = uiform(S);
+```
+
 ## Installation and Requirements
+
+**Requirements**: MATLAB R2020b or later
+
 **Option 1**: Install via MATLAB's Add-On Manager.
 
-**Option 2**: Clone this repository and add the `code` directory to MATLAB's search path
+**Option 2**: Clone this repository and add the `code` directory to MATLAB's search path:
+```matlab
+addpath('path/to/StructEditor/code');
+savepath; % Optional: save path for future sessions
+```
+
+## Supported Data Types
+
+The following MATLAB data types are automatically supported with appropriate UI controls:
+
+| Data Type | UI Control | Example |
+|-----------|------------|---------|
+| `char` / `string` | Edit Field | `'John Doe'` |
+| `double` / `single` | Numeric Edit Field | `42.5` |
+| `int8` / `int16` / `int32` / `int64` | Numeric Edit Field | `int32(100)` |
+| `uint8` / `uint16` / `uint32` / `uint64` | Numeric Edit Field | `uint8(255)` |
+| `logical` | Checkbox | `true` |
+| `categorical` | Dropdown | `categorical({'Option1'})` |
+| `datetime` | Date Picker | `datetime('2020-01-15')` |
+
+Use configuration fields (see Example 2) to override the default UI control for any data type.
+
+## Usage
+
+### Basic Syntax
+```matlab
+outputStruct = uiform(inputStruct)
+outputStruct = uiform(inputStruct, Name, Value, ...)
+```
+
+### Name-Value Arguments
+
+| Name | Type | Description | Default |
+|------|------|-------------|---------|
+| `Title` | `string` | Window title | `'Edit Struct'` |
+| `Description` | `string` | Descriptive text shown at the top | `''` |
+| `Height` | `numeric` | Window height in pixels | `400` |
+| `Theme` | `string` | Theme name (`'light'`, `'dark'`, etc.) | System default |
+
+### Return Value
+Returns the edited structure if the user clicks "OK", or the original structure if "Cancel" is clicked.
 
 ## Examples
 
@@ -75,7 +135,7 @@ updatedProfile = uiform(userProfile, ...
 ```
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=""https://github.com/user-attachments/assets/735a0706-4fb6-47f7-95f3-05f8c9e3317e">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/735a0706-4fb6-47f7-95f3-05f8c9e3317e">
     <source media="(prefers-color-scheme: light)" srcset="https://github.com/user-attachments/assets/45a5ec6d-2d35-4e76-80c3-58ef8471ac50">
     <img alt="uiform example 2" src="https://github.com/user-attachments/assets/45a5ec6d-2d35-4e76-80c3-58ef8471ac50" title="uiform example 2" align="centre" width="672" height="590"​>
   </picture>
