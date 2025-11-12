@@ -161,6 +161,8 @@ classdef StructEditorApp < handle & ...
             end
             obj.IsStandalone = false;
             obj.FinishState = "";
+            % We are waiting for figure, it should always be op top
+            obj.UIFigure.WindowStyle = "alwaysontop";
             uiwait(obj.UIFigure)
         end
    
