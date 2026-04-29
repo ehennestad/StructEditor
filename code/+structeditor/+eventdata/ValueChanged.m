@@ -4,20 +4,28 @@ classdef (ConstructOnLoad) ValueChanged < event.EventData
         Name
         OldValue
         NewValue
-        UIControls
+        GroupName
+        GroupIndex
         PageNumber
+        Control
+        UIControls
     end
     
     methods
-        function data = ValueChanged(Name, OldValue, NewValue, UIControls, pageNumber)
-            if nargin < 4;  UIControls = []; end
+        function data = ValueChanged(Name, OldValue, NewValue, control, pageNumber, groupName, groupIndex)
+            if nargin < 4;  control = []; end
             if nargin < 5;  pageNumber = 1; end
+            if nargin < 6;  groupName = missing; end
+            if nargin < 7;  groupIndex = 1; end
 
-            data.Name = Name;
+            data.Name = string(Name);
             data.OldValue = OldValue;
             data.NewValue = NewValue;
-            data.UIControls = UIControls;
+            data.Control = control;
+            data.UIControls = control;
             data.PageNumber = pageNumber;
+            data.GroupName = string(groupName);
+            data.GroupIndex = groupIndex;
         end
     end
 end

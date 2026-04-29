@@ -195,8 +195,9 @@ classdef StructEditorEmployeeTest < matlab.uitest.TestCase
             % Wait for processing
             drawnow; pause(0.1);
             
-            % Verify that app data was NOT updated (should still be original)
-            testCase.verifyEqual(testCase.App.Data.Name, originalName);
+            % Canceled callers should use OriginalData as the baseline.
+            testCase.verifyEqual(testCase.App.Data.Name, 'Jane Smith');
+            testCase.verifyEqual(testCase.App.OriginalData.Name, originalName);
             
             % Verify finish state
             testCase.verifyEqual(testCase.App.FinishState, "Canceled");

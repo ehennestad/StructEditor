@@ -29,17 +29,38 @@ classdef StructEditorApp < handle & ...
 
     properties (Access = private, Description = "Themed UI Components")
         Header
+        HeaderDescriptionLabel
+        GroupDropDown
+        HeaderPluginPanel
+        FooterPluginPanel
+        SidebarPluginPanel
         UIControlContainers (1,:)
         Footer
+        FooterGrid
         SidebarMenu
     end
 
-    properties
+    properties (Dependent)
         Data
+        Figure
+        wasCanceled
+        dataEdit
+        dataOrig
+    end
+
+    properties (SetAccess = private)
+        OriginalData
     end
 
     properties (Access = private)
+        Data_
         DataTree
+        GroupData (1,:) cell = {}
+        GroupNames (1,:) string = strings(1, 0)
+        GroupOutputNames (1,:) string = strings(1, 0)
+        GroupInputShape (1,1) string {mustBeMember(GroupInputShape, ["struct", "cell", "structOfStructs"])} = "struct"
+        GroupCellSize (1,:) double = [1 1]
+        CurrentGroupIndex (1,1) double = 1
     end
 
     properties (SetAccess = private)
@@ -55,9 +76,13 @@ classdef StructEditorApp < handle & ...
         SidebarWidth = 150
         Width = 560
         Height = 420 
-        LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
+        LabelPosition (1,1) string = "left"
         LoadingHtmlSource
         EnableNestedStruct matlab.lang.OnOffSwitchState = 'off' 
+        ValueChangedFcn
+        Callback
+        Plugins (1,:) cell = {}
+        IsModal (1,1) logical = false
     end
 
     properties (Hidden)
@@ -70,6 +95,7 @@ classdef StructEditorApp < handle & ...
         ShowFooter = true
         ShowSidebar = false
         IsStandalone (1,1) logical = true
+        IsDeleting (1,1) logical = false
     end
 
     properties (Access = private, Dependent)
@@ -83,27 +109,75 @@ classdef StructEditorApp < handle & ...
                 data % struct
                 propValues.Title = "Edit Struct"
                 propValues.Description
+                propValues.Prompt
+                propValues.Name
                 propValues.Theme (1,1) string = "" % Use system default
                 propValues.LoadingHtmlSource = ''
                 propValues.EnableNestedStruct = 'off'
                 propValues.Width = 560
                 propValues.Height = 420
+                propValues.CustomFigureSize
+                propValues.LabelPosition = "left"
                 propValues.OkButtonText = 'Ok'
+                propValues.CancelButtonText = 'Cancel'
                 propValues.CloseOnExit
+                propValues.ValueChangedFcn
+                propValues.Callback
+                propValues.Plugin
+                propValues.Plugins
+                propValues.ReferencePosition
+                propValues.DataTips
+                propValues.TabMode
+                propValues.AdjustFigureSize
             end
             
             if isfield(propValues, 'Theme')
                 theme = propValues.Theme; propValues = rmfield(propValues, 'Theme');
             end
+            if isfield(propValues, 'Prompt') && ~isfield(propValues, 'Description')
+                propValues.Description = propValues.Prompt;
+            end
+            if isfield(propValues, 'Prompt')
+                propValues = rmfield(propValues, 'Prompt');
+            end
+            if isfield(propValues, 'CustomFigureSize')
+                figureSize = propValues.CustomFigureSize;
+                propValues = rmfield(propValues, 'CustomFigureSize');
+                if isnumeric(figureSize) && numel(figureSize) == 2
+                    propValues.Width = figureSize(1);
+                    propValues.Height = figureSize(2);
+                else
+                    error("structeditor:InvalidCustomFigureSize", ...
+                        "CustomFigureSize must be a two-element numeric vector [width height].")
+                end
+            end
+            if isfield(propValues, 'Name')
+                groupNameInput = propValues.Name;
+                propValues = rmfield(propValues, 'Name');
+            else
+                groupNameInput = [];
+            end
+            propValues = obj.removeDeferredLegacyOptions(propValues);
+            if isfield(propValues, 'Plugin')
+                if isfield(propValues, 'Plugins')
+                    propValues.Plugins = [obj.wrapPluginList(propValues.Plugins), {propValues.Plugin}];
+                else
+                    propValues.Plugins = {propValues.Plugin};
+                end
+                propValues = rmfield(propValues, 'Plugin');
+            end
+            if isfield(propValues, 'Plugins')
+                propValues.Plugins = obj.wrapPluginList(propValues.Plugins);
+            end
 
             % Set properties (excluding Theme which is handled by HasTheme)
             obj.set(propValues)
 
-            obj.Data = data;
+            obj.replaceData(data, groupNameInput);
 
             % Step 1: Parse input data % Todo: postSetData function?
             if obj.EnableNestedStruct
-                obj.DataTree = structeditor.utility.getTreeStruct(data);
+                obj.DataTree = structeditor.utility.getTreeStruct(obj.GroupData{obj.CurrentGroupIndex});
                 if ~isempty(obj.DataTree.children)
                     obj.ShowSidebar = true;
                     % %Todo: flatten struct.
@@ -119,12 +193,8 @@ classdef StructEditorApp < handle & ...
             
             % Add callback to update custom themed components
             obj.addThemeChangedCallback(@obj.onThemeChanged);
-            % obj.createControls() Todo...
-            % Create the UIControlContainer
-            H = structeditor.UIControlContainer(obj.ControlPanel, obj.Data, ...
-                'LoadingHtmlSource', obj.LoadingHtmlSource, ...
-                'LabelPosition', obj.LabelPosition); %'Theme', obj.ThemeObject,
-            obj.UIControlContainers = H;
+            obj.recreateControlContainer()
+            obj.attachPlugins()
 
             obj.onThemeChanged()
         end
@@ -132,6 +202,12 @@ classdef StructEditorApp < handle & ...
         function delete(obj)
             % Clean up theme manager
             %obj.cleanupTheme();
+
+            if obj.IsDeleting
+                return
+            end
+            obj.IsDeleting = true;
+            notify(obj, 'AppDestroyed')
             
             if ~isempty(obj.UIFigure) && isvalid(obj.UIFigure)
                 uiresume(obj.UIFigure)
@@ -144,6 +220,10 @@ classdef StructEditorApp < handle & ...
                 delete(obj.UIFigure)
             end
         end
+    end
+
+    events
+        AppDestroyed
     end
 
     methods
@@ -165,6 +245,14 @@ classdef StructEditorApp < handle & ...
             obj.UIFigure.WindowStyle = "alwaysontop";
             uiwait(obj.UIFigure)
         end
+
+        function waitfor(obj, preventClose)
+            if nargin < 2
+                obj.uiwait()
+            else
+                obj.uiwait(preventClose)
+            end
+        end
    
         function show(obj)
             obj.UIFigure.Visible = 'on';
@@ -184,9 +272,85 @@ classdef StructEditorApp < handle & ...
             end
             obj.FinishState = "";
         end
+
+        function replaceData(obj, data, groupNames)
+            if nargin < 3
+                groupNames = [];
+            end
+
+            obj.OriginalData = data;
+            obj.initializeGroupData(data, groupNames);
+            obj.Data_ = obj.composeDataFromGroups();
+            obj.FinishState = "";
+
+            if ~isempty(obj.UIFigure) && isvalid(obj.UIFigure)
+                obj.updateGroupSelector()
+                obj.recreateControlContainer()
+            end
+        end
+
+        function container = getAttachmentContainer(obj, location)
+            location = lower(string(location));
+            switch location
+                case "header"
+                    container = obj.HeaderPluginPanel;
+                case "footer"
+                    container = obj.FooterPluginPanel;
+                case "sidebar"
+                    container = obj.SidebarPluginPanel;
+                otherwise
+                    error("structeditor:InvalidPluginLocation", ...
+                        "Plugin location must be header, footer, or sidebar.")
+            end
+        end
+
+        function plugin = getPlugin(obj, className)
+            className = char(className);
+            plugin = [];
+            for i = 1:numel(obj.Plugins)
+                if isa(obj.Plugins{i}, className)
+                    plugin = obj.Plugins{i};
+                    return
+                end
+            end
+        end
     end
     
     methods % Property set / get methods
+        function value = get.Data(obj)
+            value = obj.Data_;
+        end
+
+        function value = get.Figure(obj)
+            value = obj.UIFigure;
+        end
+
+        function set.Data(obj, value)
+            obj.initializeGroupData(value, []);
+            obj.Data_ = obj.composeDataFromGroups();
+            obj.postSetData()
+        end
+
+        function value = get.wasCanceled(obj)
+            value = obj.FinishState == "Canceled";
+        end
+
+        function value = get.dataEdit(obj)
+            value = obj.Data;
+        end
+
+        function set.dataEdit(obj, value)
+            obj.replaceData(value);
+        end
+
+        function value = get.dataOrig(obj)
+            value = obj.OriginalData;
+        end
+
+        function set.dataOrig(obj, value)
+            obj.OriginalData = value;
+        end
+
         function value = get.MainPanelRow(obj)
             value = 1;
             if obj.ShowHeader
@@ -211,13 +375,8 @@ classdef StructEditorApp < handle & ...
             obj.postSetDescription()
         end
 
-        function set.Data(obj, value)
-            obj.Data = value;
-            obj.postSetData()
-        end
-
         function set.LabelPosition(obj, value)
-            obj.LabelPosition = value;
+            obj.LabelPosition = structeditor.StructEditorApp.normalizeLabelPosition(value);
             obj.postSetLabelPosition()
         end
 
@@ -249,7 +408,9 @@ classdef StructEditorApp < handle & ...
         end
 
         function postSetDescription(obj)
-            if ~isempty(obj.Header)
+            if ~isempty(obj.HeaderDescriptionLabel) && isvalid(obj.HeaderDescriptionLabel)
+                obj.HeaderDescriptionLabel.Text = obj.Description;
+            elseif ~isempty(obj.Header)
                 obj.Header.Text = obj.Description;
             end
         end
@@ -259,15 +420,14 @@ classdef StructEditorApp < handle & ...
             if ~isempty(obj.UIControlContainers)
                 for i = 1:numel(obj.UIControlContainers)
                     if isvalid(obj.UIControlContainers(i))
-                        % NB/Todo: Currently only works for scalar data...
-                        obj.UIControlContainers(i).Data = obj.Data;
+                        obj.UIControlContainers(i).Data = obj.GroupData{obj.CurrentGroupIndex};
                     end
                 end
             end
             
             % Update data tree if nested structs are enabled
             if obj.EnableNestedStruct
-                obj.DataTree = structeditor.utility.getTreeStruct(obj.Data);
+                obj.DataTree = structeditor.utility.getTreeStruct(obj.GroupData{obj.CurrentGroupIndex});
                 if ~isempty(obj.DataTree.children) && obj.ShowSidebar
                     % Update sidebar menu if it exists
                     if ~isempty(obj.SidebarMenu) && isvalid(obj.SidebarMenu)
@@ -285,11 +445,15 @@ classdef StructEditorApp < handle & ...
         end
 
         function postSetCancelButtonText(obj)
-            obj.Footer.CancelButtonText = obj.CancelButtonText;
+            if ~isempty(obj.Footer) && isvalid(obj.Footer)
+                obj.Footer.CancelButtonText = obj.CancelButtonText;
+            end
         end
 
         function postSetOkButtonText(obj)
-            obj.Footer.OkButtonText = obj.OkButtonText;
+            if ~isempty(obj.Footer) && isvalid(obj.Footer)
+                obj.Footer.OkButtonText = obj.OkButtonText;
+            end
         end
     end
 
@@ -304,10 +468,46 @@ classdef StructEditorApp < handle & ...
 
             if obj.FinishState == "Finished" % Update
                 drawnow; pause(0.05)
-                obj.Data = obj.UIControlContainers.Data;
+                obj.syncCurrentGroupFromUI()
+                obj.Data_ = obj.composeDataFromGroups();
             end
+
+            obj.notifyPluginsFinishStateChanged(evt)
             
             obj.close()
+        end
+
+        function onGroupSelectionChanged(obj, src, ~)
+            obj.syncCurrentGroupFromUI()
+            obj.CurrentGroupIndex = find(obj.GroupNames == string(src.Value), 1, "first");
+            obj.recreateControlContainer()
+        end
+
+        function onControlValueChanged(obj, ~, evt)
+            obj.syncCurrentGroupFromUI()
+            obj.Data_ = obj.composeDataFromGroups();
+
+            control = obj.getControlFromValueChangedEvent(evt);
+            eventData = struct();
+            eventData.Name = string(evt.Name);
+            eventData.OldValue = evt.OldValue;
+            eventData.NewValue = evt.NewValue;
+            eventData.GroupName = obj.GroupNames(obj.CurrentGroupIndex);
+            eventData.GroupIndex = obj.CurrentGroupIndex;
+            eventData.PageNumber = evt.PageNumber;
+            eventData.Control = control;
+            eventData.UIControls = control;
+
+            if ~isempty(obj.ValueChangedFcn)
+                obj.ValueChangedFcn(obj, eventData)
+            end
+
+            obj.notifyPluginsDataChanged(eventData)
+
+            callback = obj.getCallbackForCurrentGroup();
+            if ~isempty(callback)
+                callback(char(evt.Name), evt.NewValue)
+            end
         end
         
         function onThemeChanged(obj, ~, ~)
@@ -388,21 +588,78 @@ classdef StructEditorApp < handle & ...
             obj.SidebarPanel.Tag = "Sidemenu Panel";
 
 
-            obj.SidebarMenu = structeditor.TreeMenu(obj.SidebarPanel, dataTree, obj.ThemeObject);
+            sidebarGrid = uigridlayout(obj.SidebarPanel);
+            sidebarGrid.ColumnWidth = {'1x'};
+            sidebarGrid.RowHeight = {'1x', 32};
+            sidebarGrid.Padding = [0 0 0 0];
+
+            treePanel = uipanel(sidebarGrid);
+            treePanel.BorderType = "none";
+            treePanel.Title = "";
+            treePanel.Layout.Row = 1;
+            treePanel.Layout.Column = 1;
+
+            obj.SidebarPluginPanel = uipanel(sidebarGrid);
+            obj.SidebarPluginPanel.BorderType = "none";
+            obj.SidebarPluginPanel.Title = "";
+            obj.SidebarPluginPanel.Layout.Row = 2;
+            obj.SidebarPluginPanel.Layout.Column = 1;
+
+            obj.SidebarMenu = structeditor.TreeMenu(treePanel, dataTree, obj.ThemeObject);
             obj.SidebarMenu.SelectionChangedFcn = @obj.onDataGroupChanged;
         end
 
         function createHeader(obj)
-            obj.Header = uilabel(obj.MainGridLayout);
+            obj.Header = uigridlayout(obj.MainGridLayout);
+            if obj.hasGroups()
+                obj.Header.ColumnWidth = {'1x', 160, 260};
+            else
+                obj.Header.ColumnWidth = {'1x', 0, 260};
+            end
+            obj.Header.RowHeight = {'1x'};
+            obj.Header.Padding = [0 0 0 0];
+            obj.Header.ColumnSpacing = 10;
             obj.Header.Layout.Row = 1;
             obj.Header.Layout.Column = unique([1, 1+obj.ShowSidebar*2]);
-            obj.Header.Text = obj.Description;
+
+            obj.HeaderDescriptionLabel = uilabel(obj.Header);
+            obj.HeaderDescriptionLabel.Layout.Row = 1;
+            obj.HeaderDescriptionLabel.Layout.Column = 1;
+            obj.HeaderDescriptionLabel.Text = obj.Description;
+
+            if obj.hasGroups()
+                obj.GroupDropDown = uidropdown(obj.Header);
+                obj.GroupDropDown.Layout.Row = 1;
+                obj.GroupDropDown.Layout.Column = 2;
+                obj.GroupDropDown.Items = cellstr(obj.GroupNames);
+                obj.GroupDropDown.Value = obj.GroupNames(obj.CurrentGroupIndex);
+                obj.GroupDropDown.ValueChangedFcn = @obj.onGroupSelectionChanged;
+            end
+
+            obj.HeaderPluginPanel = uipanel(obj.Header);
+            obj.HeaderPluginPanel.BorderType = "none";
+            obj.HeaderPluginPanel.Title = "";
+            obj.HeaderPluginPanel.Layout.Row = 1;
+            obj.HeaderPluginPanel.Layout.Column = 3;
         end
 
         function createFooter(obj)
-            obj.Footer = structeditor.component.FinishButtons(obj.MainGridLayout);
-            obj.Footer.Layout.Row = 1 + obj.ShowHeader*2 + obj.ShowFooter*2;
-            obj.Footer.Layout.Column = unique([1, 1+obj.ShowSidebar*2]);
+            obj.FooterGrid = uigridlayout(obj.MainGridLayout);
+            obj.FooterGrid.ColumnWidth = {'1x', 180};
+            obj.FooterGrid.RowHeight = {'1x'};
+            obj.FooterGrid.Padding = [0 0 0 0];
+            obj.FooterGrid.Layout.Row = 1 + obj.ShowHeader*2 + obj.ShowFooter*2;
+            obj.FooterGrid.Layout.Column = unique([1, 1+obj.ShowSidebar*2]);
+
+            obj.FooterPluginPanel = uipanel(obj.FooterGrid);
+            obj.FooterPluginPanel.BorderType = "none";
+            obj.FooterPluginPanel.Title = "";
+            obj.FooterPluginPanel.Layout.Row = 1;
+            obj.FooterPluginPanel.Layout.Column = 1;
+
+            obj.Footer = structeditor.component.FinishButtons(obj.FooterGrid);
+            obj.Footer.Layout.Row = 1;
+            obj.Footer.Layout.Column = 2;
             obj.Footer.FinishButtonPushedFcn = @obj.onFinishedButtonPushed;
         end
     end
@@ -460,6 +717,195 @@ classdef StructEditorApp < handle & ...
 
         function close(obj)
             obj.onUIFigureCloseRequest()
+        end
+    end
+
+    methods (Access = private)
+        function attachPlugins(obj)
+            for i = 1:numel(obj.Plugins)
+                plugin = obj.Plugins{i};
+                if ismethod(plugin, 'attach')
+                    plugin.attach(obj)
+                elseif ismethod(plugin, 'Attach')
+                    plugin.Attach(obj)
+                end
+            end
+        end
+
+        function notifyPluginsDataChanged(obj, evt)
+            for i = 1:numel(obj.Plugins)
+                plugin = obj.Plugins{i};
+                if ismethod(plugin, 'onDataChanged')
+                    plugin.onDataChanged(obj, evt)
+                end
+            end
+        end
+
+        function notifyPluginsFinishStateChanged(obj, evt)
+            for i = 1:numel(obj.Plugins)
+                plugin = obj.Plugins{i};
+                if ismethod(plugin, 'onFinishStateChanged')
+                    plugin.onFinishStateChanged(obj, evt)
+                end
+            end
+        end
+
+        function initializeGroupData(obj, data, groupNames)
+            if iscell(data)
+                assert(all(cellfun(@isstruct, data(:))), ...
+                    "structeditor:InvalidGroupedData", ...
+                    "Cell-array grouped data must contain structs.")
+
+                obj.GroupInputShape = "cell";
+                obj.GroupCellSize = size(data);
+                obj.GroupData = reshape(data, 1, []);
+                obj.GroupOutputNames = strings(1, numel(obj.GroupData));
+
+            elseif isstruct(data) && isscalar(data) && obj.isStructOfStructs(data)
+                obj.GroupInputShape = "structOfStructs";
+                names = fieldnames(data);
+                obj.GroupOutputNames = string(names);
+                obj.GroupData = cell(1, numel(names));
+                for i = 1:numel(names)
+                    obj.GroupData{i} = data.(names{i});
+                end
+                if isempty(groupNames)
+                    groupNames = string(names);
+                end
+
+            else
+                assert(isstruct(data) && isscalar(data), ...
+                    "structeditor:InvalidData", ...
+                    "StructEditorApp expects a scalar struct, cell array of structs, or scalar struct whose fields are structs.")
+
+                obj.GroupInputShape = "struct";
+                obj.GroupData = {data};
+                obj.GroupOutputNames = strings(1, 1);
+            end
+
+            if isempty(groupNames)
+                obj.GroupNames = "Group " + string(1:numel(obj.GroupData));
+            else
+                obj.GroupNames = string(groupNames);
+            end
+
+            assert(numel(obj.GroupNames) == numel(obj.GroupData), ...
+                "structeditor:InvalidGroupNames", ...
+                "Number of group names must match number of data groups.")
+
+            obj.CurrentGroupIndex = min(obj.CurrentGroupIndex, numel(obj.GroupData));
+            if isempty(obj.CurrentGroupIndex) || obj.CurrentGroupIndex < 1
+                obj.CurrentGroupIndex = 1;
+            end
+        end
+
+        function data = composeDataFromGroups(obj)
+            switch obj.GroupInputShape
+                case "cell"
+                    data = reshape(obj.GroupData, obj.GroupCellSize);
+
+                case "structOfStructs"
+                    data = struct();
+                    for i = 1:numel(obj.GroupNames)
+                        data.(obj.GroupOutputNames(i)) = obj.GroupData{i};
+                    end
+
+                otherwise
+                    data = obj.GroupData{1};
+            end
+        end
+
+        function tf = hasGroups(obj)
+            tf = numel(obj.GroupData) > 1;
+        end
+
+        function syncCurrentGroupFromUI(obj)
+            if ~isempty(obj.UIControlContainers) && isvalid(obj.UIControlContainers(1))
+                obj.GroupData{obj.CurrentGroupIndex} = obj.UIControlContainers(1).Data;
+            end
+        end
+
+        function recreateControlContainer(obj)
+            if ~isempty(obj.UIControlContainers)
+                delete(obj.UIControlContainers(isvalid(obj.UIControlContainers)))
+                obj.UIControlContainers = structeditor.UIControlContainer.empty();
+            end
+
+            delete(obj.ControlPanel.Children)
+
+            H = structeditor.UIControlContainer(obj.ControlPanel, obj.GroupData{obj.CurrentGroupIndex}, ...
+                'LoadingHtmlSource', obj.LoadingHtmlSource, ...
+                'LabelPosition', obj.LabelPosition);
+            H.ValueChangedFcn = @obj.onControlValueChanged;
+            if ~isempty(obj.ThemeObject)
+                H.Theme = obj.ThemeObject;
+            end
+            obj.UIControlContainers = H;
+        end
+
+        function updateGroupSelector(obj)
+            if isempty(obj.GroupDropDown) || ~isvalid(obj.GroupDropDown)
+                return
+            end
+
+            obj.GroupDropDown.Items = cellstr(obj.GroupNames);
+            obj.GroupDropDown.Value = obj.GroupNames(obj.CurrentGroupIndex);
+        end
+
+        function callback = getCallbackForCurrentGroup(obj)
+            callback = obj.Callback;
+            if iscell(callback)
+                if numel(callback) >= obj.CurrentGroupIndex
+                    callback = callback{obj.CurrentGroupIndex};
+                else
+                    callback = [];
+                end
+            end
+        end
+
+        function control = getControlFromValueChangedEvent(~, evt)
+            if isprop(evt, 'Control')
+                control = evt.Control;
+            elseif isprop(evt, 'UIControls')
+                control = evt.UIControls;
+            else
+                control = [];
+            end
+        end
+    end
+
+    methods (Static)
+        function propValues = removeDeferredLegacyOptions(propValues)
+            deferredOptions = ["ReferencePosition", "DataTips", "TabMode", "AdjustFigureSize"];
+            for i = 1:numel(deferredOptions)
+                optionName = deferredOptions(i);
+                if isfield(propValues, optionName)
+                    propValues = rmfield(propValues, optionName);
+                end
+            end
+        end
+
+        function value = normalizeLabelPosition(value)
+            value = lower(string(value));
+            switch value
+                case "over"
+                    value = "above";
+            end
+
+            mustBeMember(value, ["left", "above"])
+        end
+
+        function tf = isStructOfStructs(data)
+            names = fieldnames(data);
+            tf = ~isempty(names) && all(structfun(@(v) isstruct(v) && isscalar(v), data));
+        end
+
+        function plugins = wrapPluginList(plugins)
+            if isempty(plugins)
+                plugins = {};
+            elseif ~iscell(plugins)
+                plugins = {plugins};
+            end
         end
     end
 

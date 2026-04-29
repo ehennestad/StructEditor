@@ -13,7 +13,7 @@ classdef UIControlContainer < handle ...
 
     properties
         ValueChangedFcn
-        LabelPosition (1,1) string {mustBeMember(LabelPosition, ["left", "above"])} = "left"
+        LabelPosition (1,1) string = "left"
         LoadingHtmlSource
     end
 
@@ -35,6 +35,7 @@ classdef UIControlContainer < handle ...
 
     properties %(Access = private)
         UIControls
+        UIControlButtons
         UILabels matlab.ui.control.Label
         Parent
         UIGridLayout
@@ -207,7 +208,7 @@ classdef UIControlContainer < handle ...
         end
 
         function set.LabelPosition(obj, value)
-            obj.LabelPosition = value;
+            obj.LabelPosition = structeditor.StructEditorApp.normalizeLabelPosition(value);
             obj.postSetLabelPosition()
         end
 
@@ -408,9 +409,10 @@ classdef UIControlContainer < handle ...
             for i = 1:numel(fieldNames)
                 name = fieldNames(i);
                 value = obj.DataModified.(name);
-                config = obj.getConfigField(obj.DataModified, name);
+                config = structeditor.config.normalizeFieldConfig(...
+                    obj.getConfigField(obj.DataModified, name));
 
-                if isequal(config, 'hidden')
+                if config.Hidden
                     continue
                 end
 
@@ -443,56 +445,19 @@ classdef UIControlContainer < handle ...
 
         function hControl = createControl(obj, iRow, name, value, config)
 
-            if nargin < 5; config = []; end
+            if nargin < 5
+                config = structeditor.config.normalizeFieldConfig([]);
+            end
             
             parentContainer = obj.UIGridLayout;
 
             % Create custom control / widget
-            if ~isempty(config) % TODO.
-                if ischar( config )
-                    hControl = feval(config, parentContainer);
-                elseif ischar(value) && iscell(config)
-                    % Makes it backwards-compatible
-                    value = categorical({value}, config);
-                    hControl = obj.createControl(iRow, name, value, []);
-                    return
-
-                elseif isa( config, 'function_handle' )
-                    % Create component from custom function handle
-                    hControl = config(parentContainer);
-                    % Question: Set background color based on parent?
-                    % hControl.BackgroundColor = 'w'; %todo?
-                end
+            if config.Kind ~= "auto"
+                hControl = obj.createConfiguredControl(parentContainer, iRow, name, value, config);
                
             % Create standard control / widget
             else 
-                switch class(value)
-                    case 'string'
-                        hControl = uieditfield(parentContainer);
-    
-                    case 'char'
-                        hControl = uieditfield(parentContainer);
-    
-                    case {'single', 'double'}
-                        hControl = uieditfield(parentContainer, 'numeric', 'AllowEmpty', 'on');
-    
-                    case {'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'}
-                        lowerLimit = intmin(class(value)); upperLimit = intmax(class(value));
-                        limits = double([lowerLimit, upperLimit]);
-                        hControl = uispinner(parentContainer, 'Limits', limits, 'AllowEmpty', 'on', 'ValueDisplayFormat', '%d');
-                        value = double(value);
-    
-                    case 'categorical'
-                        hControl = uidropdown(parentContainer);
-                        hControl.Items = categories(value);
-    
-                    case 'logical'
-                        hControl = uicheckbox(parentContainer);
-                        hControl.Text = '';
-
-                    case 'datetime'
-                        hControl = uidatepicker(parentContainer);
-                end
+                hControl = obj.createAutoControl(parentContainer, value);
             end
             if isnumeric(value) && isempty(value)
                 value = []; % 0x1 and 1x0 not supported in numeric controls.
@@ -526,6 +491,109 @@ classdef UIControlContainer < handle ...
             %     %ccTools.compCustomization(hControl, 'borderRadius', "5px")
             % end
         end
+
+        function hControl = createAutoControl(obj, parentContainer, value)
+            switch class(value)
+                case 'string'
+                    hControl = uieditfield(parentContainer);
+
+                case 'char'
+                    hControl = uieditfield(parentContainer);
+
+                case {'single', 'double'}
+                    if isscalar(value) || isempty(value)
+                        hControl = uieditfield(parentContainer, 'numeric', 'AllowEmpty', 'on');
+                    else
+                        hControl = uieditfield(parentContainer);
+                    end
+
+                case {'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'}
+                    if isscalar(value) || isempty(value)
+                        lowerLimit = intmin(class(value));
+                        upperLimit = intmax(class(value));
+                        limits = double([lowerLimit, upperLimit]);
+                        hControl = uispinner(parentContainer, ...
+                            'Limits', limits, ...
+                            'AllowEmpty', 'on', ...
+                            'ValueDisplayFormat', '%d');
+                    else
+                        hControl = uieditfield(parentContainer);
+                    end
+
+                case 'categorical'
+                    hControl = uidropdown(parentContainer);
+                    hControl.Items = categories(value);
+
+                case 'logical'
+                    hControl = uicheckbox(parentContainer);
+                    hControl.Text = '';
+
+                case 'datetime'
+                    hControl = uidatepicker(parentContainer);
+
+                case 'cell'
+                    hControl = uieditfield(parentContainer);
+
+                otherwise
+                    error("structeditor:UnsupportedFieldType", ...
+                        "Field type %s is not supported.", class(value))
+            end
+        end
+
+        function hControl = createConfiguredControl(obj, parentContainer, iRow, name, value, config)
+            switch config.Kind
+                case "dropdown"
+                    hControl = uidropdown(parentContainer);
+                    obj.configureDropdown(hControl, value, config.Choices)
+
+                case "custom"
+                    hControl = config.Action(parentContainer);
+
+                case {"browse", "color", "action"}
+                    hControl = obj.createAutoControl(parentContainer, value);
+                    hButton = uibutton(parentContainer, ...
+                        "Text", "...", ...
+                        "Tag", name, ...
+                        "ButtonPushedFcn", @(src, evt) obj.onActionButtonPushed(src, evt, config));
+                    obj.UIControlButtons.(name) = hButton;
+
+                case "slider"
+                    hControl = uislider(parentContainer, config.Args{:});
+
+                case {"button", "pushbutton"}
+                    hControl = uibutton(parentContainer, "push", config.Args{:});
+
+                case "togglebutton"
+                    hControl = uibutton(parentContainer, "state", config.Args{:});
+
+                case "multilinechar"
+                    hControl = uitextarea(parentContainer);
+
+                otherwise
+                    error("structeditor:UnsupportedFieldConfig", ...
+                        "Field config type %s is not supported.", config.Kind)
+            end
+
+            if isfield(obj.UIControlButtons, name)
+                obj.placeUIControl(obj.UIControlButtons.(name), iRow)
+                obj.UIControlButtons.(name).Layout.Column = 3;
+            end
+        end
+
+        function configureDropdown(~, hControl, value, choices)
+            if isempty(choices)
+                choices = cellstr(string(value));
+            end
+
+            if all(cellfun(@(v) ischar(v) || isstring(v), choices))
+                items = cellstr(string(choices));
+                hControl.Items = items;
+            else
+                items = cellstr(string([choices{:}]));
+                hControl.Items = items;
+                hControl.ItemsData = [choices{:}];
+            end
+        end
     
         function value = formatValueForControl(obj, value) %#ok<INUSD>
             if isnumeric(value) && isempty(value)
@@ -534,7 +602,7 @@ classdef UIControlContainer < handle ...
             end
 
             switch class(value)
-                case {'uint8', 'uint16'}
+                case {'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'}
                     value = double(value);
 
                 case 'categorical'
@@ -544,6 +612,17 @@ classdef UIControlContainer < handle ...
                     if isempty(value)
                         value = NaT;
                     end
+
+                case 'cell'
+                    if all(cellfun(@ischar, value)) || all(cellfun(@isstring, value))
+                        value = strjoin(cellstr(string(value)), ", ");
+                    elseif all(cellfun(@isnumeric, value))
+                        value = strjoin(cellfun(@num2str, value, "UniformOutput", false), " ");
+                    end
+            end
+
+            if isnumeric(value) && ~isscalar(value)
+                value = mat2str(value);
             end
         end
     end
@@ -556,16 +635,13 @@ classdef UIControlContainer < handle ...
             oldValue = obj.DataModified.(fieldName);
             newValue = evt.Value;
 
-            if isnumeric(oldValue)
-                obj.DataModified.(fieldName) = cast(newValue, 'like', oldValue);
-            else
-                obj.DataModified.(fieldName) = newValue;
-            end
+            newValue = obj.convertControlValue(newValue, oldValue);
+            obj.DataModified.(fieldName) = newValue;
 
             % Todo: Value changed...
             if ~isempty(obj.ValueChangedFcn)
                 evtData = structeditor.eventdata.ValueChanged(...
-                    fieldName, oldValue, newValue);
+                    fieldName, oldValue, newValue, src);
                 obj.ValueChangedFcn(obj, evtData)
             end
         end
@@ -574,6 +650,105 @@ classdef UIControlContainer < handle ...
             % Todo. Not implemented yet
             % Todo. Look at the decorators from weblab, i.e throttle and
             % debounce
+        end
+
+        function onActionButtonPushed(obj, src, ~, config)
+            fieldName = src.Tag;
+            oldValue = obj.DataModified.(fieldName);
+
+            switch config.Kind
+                case "browse"
+                    newValue = obj.getPathFromDialog(config.Action, oldValue);
+
+                case "color"
+                    newValue = uisetcolor(oldValue);
+                    if isequal(newValue, 0)
+                        return
+                    end
+
+                case "action"
+                    if isa(config.Action, "function_handle")
+                        newValue = config.Action(obj.DataModified);
+                    else
+                        return
+                    end
+            end
+
+            if isequal(newValue, oldValue)
+                return
+            end
+
+            newData = obj.DataModified;
+            newData.(fieldName) = obj.convertControlValue(newValue, oldValue);
+            obj.Data = newData;
+        end
+
+        function value = convertControlValue(~, value, oldValue)
+            switch class(oldValue)
+                case {'single', 'double'}
+                    if ischar(value) || isstring(value)
+                        value = str2num(char(value)); %#ok<ST2NM>
+                    end
+                    value = cast(value, 'like', oldValue);
+
+                case {'uint8', 'uint16', 'uint32', 'uint64', 'int8', 'int16', 'int32', 'int64'}
+                    if ischar(value) || isstring(value)
+                        value = str2num(char(value)); %#ok<ST2NM>
+                    end
+                    value = cast(value, 'like', oldValue);
+
+                case 'categorical'
+                    value = categorical(cellstr(string(value)), categories(oldValue));
+
+                case 'cell'
+                    if all(cellfun(@ischar, oldValue)) || all(cellfun(@isstring, oldValue))
+                        value = strtrim(split(string(value), ","));
+                        value = cellstr(value(value ~= ""));
+                    elseif all(cellfun(@isnumeric, oldValue))
+                        numericValue = str2num(char(value)); %#ok<ST2NM>
+                        value = num2cell(numericValue);
+                    end
+
+                case 'string'
+                    value = string(value);
+
+                case 'char'
+                    value = char(value);
+            end
+        end
+
+        function pathString = getPathFromDialog(~, action, oldValue)
+            if isempty(oldValue)
+                initPath = pwd;
+            else
+                initPath = char(oldValue);
+            end
+
+            switch action
+                case 'uigetfile'
+                    [fileName, folderPath] = uigetfile({'*', 'All Files (*.*)'}, '', initPath);
+                    if isequal(fileName, 0)
+                        pathString = oldValue;
+                    else
+                        pathString = fullfile(folderPath, fileName);
+                    end
+
+                case 'uiputfile'
+                    [fileName, folderPath] = uiputfile({'*', 'All Files (*.*)'}, '', initPath);
+                    if isequal(fileName, 0)
+                        pathString = oldValue;
+                    else
+                        pathString = fullfile(folderPath, fileName);
+                    end
+
+                case 'uigetdir'
+                    selectedPath = uigetdir(initPath);
+                    if isequal(selectedPath, 0)
+                        pathString = oldValue;
+                    else
+                        pathString = selectedPath;
+                    end
+            end
         end
     end
 end
